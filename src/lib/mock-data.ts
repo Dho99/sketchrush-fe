@@ -96,6 +96,7 @@ export const MOCK_ROUND: RoundState = {
   secretWord: 'GAJAH',
   timeLeft: 67,
   phase: 'drawing',
+  clues: [],
 };
 
 // ─── Settings ──────────────────────────────────────────────────────────────────
@@ -107,6 +108,9 @@ export const MOCK_SETTINGS: GameSettings = {
   enableReplay: true,
   enableSmartTolerance: true,
   enableHints: true,
+  enableAiClue: true,
+  clueTriggerSeconds: 10,
+  maxCluesPerRound: 3,
 };
 
 // ─── Round Result ──────────────────────────────────────────────────────────────

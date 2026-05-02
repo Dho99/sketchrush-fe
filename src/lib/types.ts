@@ -1,9 +1,10 @@
 // ─── Player & Room ────────────────────────────────────────────────────────────
 
+export type PlayerRole = 'host' | 'drawer' | 'guesser' | 'spectator';
 export type PlayerStatus = 'drawing' | 'guessed' | 'waiting' | 'disconnected';
 export type GameStatus = 'lobby' | 'playing' | 'round-end' | 'game-end';
-export type DrawingTool = 'pencil' | 'eraser';
-export type MessageType = 'normal' | 'system' | 'correct-guess' | 'close-guess';
+export type DrawingTool = 'pencil' | 'eraser' | 'clear' | 'undo';
+export type MessageType = 'normal' | 'system' | 'correct-guess' | 'close-guess' | 'warning';
 export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
 export type RoundPhase = 'choosing-word' | 'drawing' | 'round-end';
 
@@ -15,6 +16,7 @@ export interface Player {
   status: PlayerStatus;
   isHost: boolean;
   isReady: boolean;
+  role: PlayerRole;
 }
 
 export interface Room {
@@ -31,11 +33,21 @@ export interface GameSettings {
   enableReplay: boolean;
   enableSmartTolerance: boolean;
   enableHints: boolean;
+  enableAiClue: boolean;
+  clueTriggerSeconds: number;
+  maxCluesPerRound: number;
 }
 
 // ─── Round State ───────────────────────────────────────────────────────────────
 
+export interface RoundClue {
+  clue: string;
+  index: number;
+  total: number;
+}
+
 export interface RoundState {
+  roundId: string;
   roundNumber: number;
   totalRounds: number;
   currentDrawerId: string;
@@ -43,6 +55,7 @@ export interface RoundState {
   secretWord: string;
   timeLeft: number;
   phase: RoundPhase;
+  clues: RoundClue[];
 }
 
 // ─── Chat ──────────────────────────────────────────────────────────────────────

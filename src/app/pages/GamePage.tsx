@@ -1,19 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { GameStatusBar } from '../components/GameStatusBar';
 import { Scoreboard } from '../components/Scoreboard';
 import { DrawingCanvas } from '../components/DrawingCanvas';
 import { ChatPanel } from '../components/ChatPanel';
+import { ClueDisplay } from '../components/ClueDisplay';
 import { RoundResultModal } from '../components/RoundResultModal';
 import { GameEndModal } from '../components/GameEndModal';
 import { ReplayModal } from '../components/ReplayModal';
 import { RulesModal } from '../components/RulesModal';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { LeaveRoomModal } from '../components/LeaveRoomModal';
 import { useGameStore } from '../../store/game-store';
-import { generateId } from '../../lib/utils';
-import { sendChatMessage, requestNextRound, leaveRoom } from '../../lib/socket-placeholder';
-import type { ChatMessage, Stroke } from '../../lib/types';
+import { useSocketGame } from '../../hooks/useSocketGame';
+import { useRoomExitGuard } from '../../hooks/useRoomExitGuard';
+import { socketService } from '../../lib/socket';
+import type { Stroke } from '../../lib/types';
 import { cn } from '../../lib/utils';
 
 // Mobile tab type
@@ -24,6 +27,9 @@ export function GamePage() {
   const navigate = useNavigate();
   const [mobileTab, setMobileTab] = useState<MobileTab>('canvas');
 
+  // Real socket integration
+  useSocketGame(roomCode);
+
   const {
     currentUser,
     room,
@@ -31,117 +37,70 @@ export function GamePage() {
     round,
     messages,
     strokes,
-    settings,
     connectionStatus,
     showRoundResult,
     showGameEnd,
     showRules,
     showReplay,
     roundResult,
-    initializeMockGame,
-    addMessage,
-    addStroke,
-    removeLastStroke,
-    clearStrokes,
+    emotes,
     setShowRoundResult,
     setShowGameEnd,
     setShowRules,
     setShowReplay,
-    decrementTimer,
   } = useGameStore();
 
-  // Initialize mock game state on mount
-  useEffect(() => {
-    initializeMockGame();
-  }, [initializeMockGame]);
-
-  // Timer countdown
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
-  useEffect(() => {
-    timerRef.current = setInterval(() => {
-      decrementTimer();
-    }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [decrementTimer]);
-
-  // Auto show round result after timer ends (mock)
-  useEffect(() => {
-    if (round?.timeLeft === 0) {
-      setTimeout(() => setShowRoundResult(true), 500);
-    }
-  }, [round?.timeLeft, setShowRoundResult]);
-
+  const isHost = currentUser?.isHost ?? false;
   const isDrawer = currentUser?.id === round?.currentDrawerId;
-  const currentDisplayRoom = room ?? { code: roomCode ?? 'HANEP7', hostId: 'p1' };
+  const isSpectator = currentUser?.status === 'spectator' || currentUser?.role === 'spectator';
+  const currentDisplayRoom = room ?? { code: roomCode ?? '------', hostId: 'unknown' };
+
+  const {
+    showConfirmModal,
+    confirmExit,
+    cancelExit,
+    isProcessingExit,
+  } = useRoomExitGuard({
+    roomCode: roomCode,
+    isHost,
+    isInRoom: !!room,
+  });
 
   const handleSendMessage = (text: string) => {
-    if (!currentUser) return;
+    if (!currentUser || !roomCode) return;
 
-    const newMsg: ChatMessage = {
-      id: generateId(),
-      playerId: currentUser.id,
-      playerName: currentUser.name,
-      content: text,
-      type: 'normal',
-      timestamp: Date.now(),
-    };
-
-    addMessage(newMsg);
-
-    // TODO: Replace with socket.emit('chat:send' or 'guess:submit', { message: text })
-    sendChatMessage(text);
-
-    // Mock: simulate smart answer tolerance for non-drawers
-    if (!isDrawer && round) {
-      const guess = text.toLowerCase().trim();
-      const answer = round.secretWord.toLowerCase();
-      const distance = levenshtein(guess, answer);
-
-      if (guess === answer) {
-        // Correct guess
-        const sysMsg: ChatMessage = {
-          id: generateId(),
-          playerId: 'system',
-          playerName: 'System',
-          content: `${currentUser.name} guessed the word! 🎉`,
-          type: 'correct-guess',
-          timestamp: Date.now(),
-        };
-        addMessage(sysMsg);
-        toast.success('You guessed it! 🎉');
-      } else if (settings.enableSmartTolerance && distance <= 2 && guess.length >= 3) {
-        // Close guess
-        const sysMsg: ChatMessage = {
-          id: generateId(),
-          playerId: 'system',
-          playerName: 'System',
-          content: `${currentUser.name}'s guess was close! 👀`,
-          type: 'close-guess',
-          timestamp: Date.now(),
-        };
-        addMessage(sysMsg);
-        toast(`Your guess was close! Keep trying 👀`, { icon: '🔥' });
-      }
+    if (isDrawer || isSpectator) {
+        socketService.emit('chat:send', { roomCode, message: text });
+    } else {
+        socketService.emit('guess:submit', { roomCode, guess: text });
     }
   };
 
   const handleStrokeComplete = (stroke: Stroke) => {
-    addStroke(stroke);
+    if (!roomCode || !round) return;
+    socketService.emit('draw:stroke', {
+        roomCode,
+        roundId: round.roundId,
+        tool: stroke.tool.toUpperCase(),
+        color: stroke.color,
+        brushSize: stroke.size,
+        points: stroke.points,
+    });
   };
 
   const handleClear = () => {
-    clearStrokes();
+    if (!roomCode) return;
+    socketService.emit('draw:clear', { roomCode });
   };
 
   const handleUndo = () => {
-    removeLastStroke();
+    if (!roomCode) return;
+    socketService.emit('draw:undo', { roomCode });
   };
 
   const handleNextRound = () => {
-    setShowRoundResult(false);
-    // TODO: Replace with socket.emit('round:next')
-    requestNextRound();
-    toast.success('Starting next round...');
+    if (!roomCode) return;
+    socketService.emit('round:next', { roomCode });
   };
 
   const handlePlayAgain = () => {
@@ -151,9 +110,13 @@ export function GamePage() {
 
   const handleBackToHome = () => {
     setShowGameEnd(false);
-    // TODO: socket.emit('room:leave')
-    leaveRoom();
+    socketService.emit('room:leave', { roomCode });
     navigate('/');
+  };
+
+  const handleSendEmote = (emote: string) => {
+      if (!roomCode) return;
+      socketService.emit('emote:send', { roomCode, emote });
   };
 
   if (!round) {
@@ -161,7 +124,7 @@ export function GamePage() {
       <div className="flex items-center justify-center h-screen bg-amber-50 dark:bg-[#0F0F1A]">
         <div className="text-center space-y-2">
           <div className="text-4xl" aria-hidden>⏳</div>
-          <p className="text-stone-600 dark:text-stone-400">Loading game...</p>
+          <p className="text-stone-600 dark:text-stone-400">Waiting for round to start...</p>
         </div>
       </div>
     );
@@ -174,7 +137,23 @@ export function GamePage() {
   ];
 
   return (
-    <div className="flex flex-col h-screen bg-amber-50 dark:bg-[#0F0F1A] overflow-hidden">
+    <div className="flex flex-col h-screen bg-amber-50 dark:bg-[#0F0F1A] overflow-hidden relative">
+      {/* Floating Emotes Layer */}
+      <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+          {emotes.map((e) => (
+              <div 
+                key={e.id}
+                className="absolute animate-bounce-up text-4xl"
+                style={{ 
+                    left: `${20 + (parseInt(e.id.slice(-2), 16) % 60)}%`,
+                    bottom: '20px'
+                }}
+              >
+                  {e.emote}
+              </div>
+          ))}
+      </div>
+
       {/* Status bar */}
       <GameStatusBar
         round={round}
@@ -205,22 +184,45 @@ export function GamePage() {
             onClear={handleClear}
             onUndo={handleUndo}
           />
+          {/* Emote Bar */}
+          <div className="flex justify-center gap-4 py-2 bg-white/50 dark:bg-stone-900/50 backdrop-blur-sm border-t border-stone-200 dark:border-stone-700">
+              {["😂", "🔥", "👏", "😱", "🤔", "❤️"].map((e) => (
+                  <button 
+                    key={e} 
+                    onClick={() => handleSendEmote(e)}
+                    className="text-2xl hover:scale-125 transition-transform"
+                  >
+                      {e}
+                  </button>
+              ))}
+          </div>
         </main>
 
         {/* Right: Chat */}
-        <aside className="w-64 lg:w-72 shrink-0 border-l-2 border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 overflow-hidden flex flex-col">
-          <ChatPanel
-            messages={messages}
-            isDrawer={isDrawer}
-            onSendMessage={handleSendMessage}
-          />
+        <aside className="w-64 lg:w-72 shrink-0 border-l-2 border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 overflow-hidden flex flex-col p-2 gap-2">
+          <ClueDisplay clues={round?.clues || []} isDrawer={isDrawer} />
+          <div className="flex-1 flex flex-col min-h-0">
+            <ChatPanel
+              messages={messages}
+              isDrawer={isDrawer}
+              onSendMessage={handleSendMessage}
+              placeholder={isSpectator ? "Spectator Chat..." : undefined}
+            />
+          </div>
         </aside>
       </div>
 
       {/* ── Mobile layout: tabbed ─── */}
       <div className="flex md:hidden flex-col flex-1 min-h-0 overflow-hidden">
         {/* Tab content */}
-        <div className="flex-1 min-h-0 overflow-hidden bg-white dark:bg-stone-900">
+        <div className="flex-1 min-h-0 overflow-hidden bg-white dark:bg-stone-900 relative">
+          {mobileTab === 'canvas' && !isDrawer && round?.clues && round.clues.length > 0 && (
+            <div className="absolute top-2 left-2 right-2 z-10 pointer-events-none">
+              <div className="pointer-events-auto max-w-[280px]">
+                <ClueDisplay clues={round.clues} isDrawer={isDrawer} />
+              </div>
+            </div>
+          )}
           {mobileTab === 'players' && (
             <div className="h-full overflow-y-auto">
               <Scoreboard
@@ -239,6 +241,13 @@ export function GamePage() {
                 onClear={handleClear}
                 onUndo={handleUndo}
               />
+              <div className="flex justify-center gap-4 py-2 border-t border-stone-200 dark:border-stone-700">
+                {["😂", "🔥", "👏", "😱", "🤔", "❤️"].map((e) => (
+                    <button key={e} onClick={() => handleSendEmote(e)} className="text-xl">
+                        {e}
+                    </button>
+                ))}
+              </div>
             </div>
           )}
           {mobileTab === 'chat' && (
@@ -247,6 +256,7 @@ export function GamePage() {
                 messages={messages}
                 isDrawer={isDrawer}
                 onSendMessage={handleSendMessage}
+                placeholder={isSpectator ? "Spectator Chat..." : undefined}
               />
             </div>
           )}
@@ -302,34 +312,13 @@ export function GamePage() {
 
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
 
-      {/* Dev toolbar (only shown in dev) */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2 bg-black/70 backdrop-blur-sm rounded-xl p-2 border border-white/10">
-        <button onClick={() => setShowRoundResult(true)} className="text-xs text-white/70 hover:text-white px-2 py-1 rounded hover:bg-white/10 transition-colors">
-          Round Result ↗
-        </button>
-        <button onClick={() => setShowGameEnd(true)} className="text-xs text-white/70 hover:text-white px-2 py-1 rounded hover:bg-white/10 transition-colors">
-          Game End ↗
-        </button>
-        <button onClick={() => setShowReplay(true)} className="text-xs text-white/70 hover:text-white px-2 py-1 rounded hover:bg-white/10 transition-colors">
-          Replay ↗
-        </button>
-        <ThemeToggle className="w-7 h-7 rounded-lg border-white/20 bg-white/10 hover:bg-white/20" />
-      </div>
+      <LeaveRoomModal
+        isOpen={showConfirmModal}
+        isHost={isHost}
+        onConfirm={confirmExit}
+        onCancel={cancelExit}
+        isLeaving={isProcessingExit}
+      />
     </div>
   );
-}
-
-// Simple Levenshtein distance for smart tolerance
-function levenshtein(a: string, b: string): number {
-  const m = a.length, n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      dp[i][j] = a[i - 1] === b[j - 1]
-        ? dp[i - 1][j - 1]
-        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-    }
-  }
-  return dp[m][n];
 }

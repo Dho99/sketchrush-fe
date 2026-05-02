@@ -198,7 +198,7 @@ export function LandingPage() {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
-              to="/join"
+              to="/public-lobby"
               className={cn(
                 'flex items-center gap-2 px-8 py-3.5 rounded-2xl border-2 border-stone-800 dark:border-stone-500',
                 'bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200',
@@ -208,7 +208,7 @@ export function LandingPage() {
                 'transition-all font-bold text-lg',
               )}
             >
-              🚪 Join Room
+              🌐 Browse Rooms
             </Link>
           </div>
 

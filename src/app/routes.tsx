@@ -4,6 +4,14 @@ import { LandingPage } from './pages/LandingPage';
 import { JoinPage } from './pages/JoinPage';
 import { LobbyPage } from './pages/LobbyPage';
 import { GamePage } from './pages/GamePage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
+import { AccountPage } from './pages/AccountPage';
+import { PlayingHistoryPage } from './pages/PlayingHistoryPage';
+import { StatsPage } from './pages/StatsPage';
+import { PublicLobbyPage } from './pages/PublicLobbyPage';
+import { GuestRoute } from './components/auth/GuestRoute';
 
 function NotFound() {
   return (
@@ -34,9 +42,21 @@ export const router = createBrowserRouter([
     Component: AppShell,
     children: [
       { index: true, Component: LandingPage },
+      {
+        Component: GuestRoute,
+        children: [
+          { path: 'login', Component: LoginPage },
+          { path: 'register', Component: RegisterPage },
+        ],
+      },
+      { path: 'auth/callback', Component: AuthCallbackPage },
       { path: 'join', Component: JoinPage },
+      { path: 'public-lobby', Component: PublicLobbyPage },
       { path: 'lobby/:roomCode', Component: LobbyPage },
       { path: 'game/:roomCode', Component: GamePage },
+      { path: 'account', Component: AccountPage },
+      { path: 'playing-history', Component: PlayingHistoryPage },
+      { path: 'stats', Component: StatsPage },
       { path: '*', Component: NotFound },
     ],
   },

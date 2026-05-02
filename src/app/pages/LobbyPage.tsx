@@ -7,7 +7,10 @@ import { RoomCodeBadge } from '../components/RoomCodeBadge';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { EmptyState } from '../components/EmptyState';
 import { useGameStore } from '../../store/game-store';
-import { setReady, startGame } from '../../lib/socket-placeholder';
+import { useSocketRoom } from '../../hooks/useSocketRoom';
+import { useRoomExitGuard } from '../../hooks/useRoomExitGuard';
+import { LeaveRoomModal } from '../components/LeaveRoomModal';
+import { socketService } from '../../lib/socket';
 import { cn } from '../../lib/utils';
 
 const MIN_PLAYERS = 2;
@@ -15,6 +18,7 @@ const MIN_PLAYERS = 2;
 export function LobbyPage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const navigate = useNavigate();
+  const { toggleReady } = useSocketRoom(roomCode);
 
   const {
     currentUser,
@@ -23,15 +27,7 @@ export function LobbyPage() {
     room,
     updateSettings,
     updatePlayerReady,
-    initializeMockLobby,
   } = useGameStore();
-
-  // Initialize with mock data if no room in store
-  useEffect(() => {
-    if (!room) {
-      initializeMockLobby();
-    }
-  }, [room, initializeMockLobby]);
 
   const isHost = currentUser?.isHost ?? false;
   const isReady = players.find((p) => p.id === currentUser?.id)?.isReady ?? false;
@@ -39,21 +35,25 @@ export function LobbyPage() {
   const canStart = isHost && players.length >= MIN_PLAYERS && readyCount === players.length;
   const displayCode = roomCode ?? room?.code ?? '------';
 
+  const {
+    showConfirmModal,
+    confirmExit,
+    cancelExit,
+    isProcessingExit,
+  } = useRoomExitGuard({
+    roomCode: displayCode,
+    isHost,
+    isInRoom: !!room,
+  });
+
   const handleToggleReady = () => {
     const nextReady = !isReady;
-    if (currentUser) {
-      updatePlayerReady(currentUser.id, nextReady);
-    }
-    // TODO: Replace with socket.emit('player:ready', { isReady: nextReady })
-    setReady(nextReady);
-    toast.success(nextReady ? 'You are ready! ✅' : 'You are no longer ready.');
+    toggleReady(nextReady);
   };
 
   const handleStartGame = () => {
     if (!canStart) return;
-    // TODO: Replace with socket.emit('game:start')
-    startGame();
-    navigate(`/game/${displayCode}`);
+    socketService.emit('game:start', { roomCode: displayCode });
   };
 
   const handleCopyLink = () => {
@@ -210,9 +210,18 @@ export function LobbyPage() {
             settings={settings}
             isHost={isHost}
             onChange={updateSettings}
+            roomCode={displayCode}
           />
         </div>
       </div>
+
+      <LeaveRoomModal
+        isOpen={showConfirmModal}
+        isHost={isHost}
+        onConfirm={confirmExit}
+        onCancel={cancelExit}
+        isLeaving={isProcessingExit}
+      />
     </div>
   );
 }

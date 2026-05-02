@@ -7,38 +7,40 @@ interface ChatMessageItemProps {
   message: ChatMessage;
 }
 
-const messageStyles: Record<MessageType, string> = {
+const messageStyles: Record<string, string> = {
   normal: 'bg-transparent',
   system: 'bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg px-2 py-1',
   'correct-guess': 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-2 py-1',
   'close-guess': 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1',
+  warning: 'bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg px-2 py-1',
 };
 
-const messageTextStyles: Record<MessageType, string> = {
+const messageTextStyles: Record<string, string> = {
   normal: 'text-stone-700 dark:text-stone-300',
   system: 'text-sky-700 dark:text-sky-300',
   'correct-guess': 'text-emerald-700 dark:text-emerald-300',
   'close-guess': 'text-amber-700 dark:text-amber-300',
+  warning: 'text-rose-700 dark:text-rose-300',
 };
 
 function ChatMessageItem({ message }: ChatMessageItemProps) {
   const isSystem = message.type !== 'normal';
+  const typeKey = message.type as string;
 
   return (
-    <div className={cn('text-sm', messageStyles[message.type])}>
+    <div className={cn('text-sm', messageStyles[typeKey] || messageStyles.normal)}>
       {isSystem ? (
-        <p className={cn('text-xs', messageTextStyles[message.type])}>
+        <p className={cn('text-xs font-bold', messageTextStyles[typeKey] || messageTextStyles.normal)}>
           {message.content}
         </p>
       ) : (
         <p className="text-stone-800 dark:text-stone-200">
           <span
             className="font-bold mr-1"
-            style={{ color: undefined }}
           >
             {message.playerName}:
           </span>
-          <span className={messageTextStyles[message.type]}>{message.content}</span>
+          <span className={messageTextStyles[typeKey] || messageTextStyles.normal}>{message.content}</span>
         </p>
       )}
     </div>

@@ -10,17 +10,16 @@ import type {
   GameSettings,
   ConnectionStatus,
   RoundResult,
+  RoundClue,
 } from '../lib/types';
-import {
-  MOCK_CURRENT_USER,
-  MOCK_PLAYERS,
-  MOCK_ROOM,
-  MOCK_MESSAGES,
-  MOCK_ROUND,
-  MOCK_SETTINGS,
-  MOCK_STROKES,
-  MOCK_ROUND_RESULT,
-} from '../lib/mock-data';
+
+export interface FloatingEmote {
+  id: string;
+  playerId: string;
+  playerName: string;
+  emote: string;
+  sentAt: number;
+}
 
 interface GameStore extends GameState {
   // Setters
@@ -29,6 +28,8 @@ interface GameStore extends GameState {
   setPlayers: (players: Player[]) => void;
   setGameStatus: (status: GameStatus) => void;
   setRound: (round: RoundState | null) => void;
+  addClue: (clue: RoundClue) => void;
+  clearClues: () => void;
   setSettings: (settings: GameSettings) => void;
   updateSettings: (settings: Partial<GameSettings>) => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
@@ -51,6 +52,11 @@ interface GameStore extends GameState {
 
   // Timer
   decrementTimer: () => void;
+  setTimer: (seconds: number) => void;
+
+  // Emotes
+  addEmote: (emote: FloatingEmote) => void;
+  removeEmote: (id: string) => void;
 
   // Modals
   setShowRoundResult: (show: boolean) => void;
@@ -59,8 +65,6 @@ interface GameStore extends GameState {
   setShowReplay: (show: boolean) => void;
 
   // Lifecycle
-  initializeMockGame: () => void;
-  initializeMockLobby: () => void;
   resetGame: () => void;
 }
 
@@ -71,6 +75,9 @@ const defaultSettings: GameSettings = {
   enableReplay: true,
   enableSmartTolerance: true,
   enableHints: true,
+  enableAiClue: true,
+  clueTriggerSeconds: 10,
+  maxCluesPerRound: 3,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -89,6 +96,7 @@ export const useGameStore = create<GameStore>((set) => ({
   showReplay: false,
   roundResult: null,
   connectionStatus: 'connected',
+  emotes: [],
 
   // ─── Setters ─────────────────────────────────────────────────────────────────
   setCurrentUser: (currentUser) => set({ currentUser }),
@@ -96,6 +104,21 @@ export const useGameStore = create<GameStore>((set) => ({
   setPlayers: (players) => set({ players }),
   setGameStatus: (gameStatus) => set({ gameStatus }),
   setRound: (round) => set({ round }),
+  addClue: (clue) =>
+    set((state) => {
+      if (!state.round) return {};
+      if (state.round.clues.some((c) => c.index === clue.index)) return {};
+      return {
+        round: { ...state.round, clues: [...state.round.clues, clue] },
+      };
+    }),
+  clearClues: () =>
+    set((state) => {
+      if (!state.round) return {};
+      return {
+        round: { ...state.round, clues: [] },
+      };
+    }),
   setSettings: (settings) => set({ settings }),
   updateSettings: (newSettings) =>
     set((state) => ({ settings: { ...state.settings, ...newSettings } })),
@@ -137,6 +160,19 @@ export const useGameStore = create<GameStore>((set) => ({
         round: { ...state.round, timeLeft: Math.max(0, state.round.timeLeft - 1) },
       };
     }),
+  setTimer: (seconds) =>
+    set((state) => {
+      if (!state.round) return {};
+      return {
+        round: { ...state.round, timeLeft: seconds },
+      };
+    }),
+
+  // ─── Emotes ──────────────────────────────────────────────────────────────────
+  addEmote: (emote) =>
+    set((state) => ({ emotes: [...state.emotes, emote] })),
+  removeEmote: (id) =>
+    set((state) => ({ emotes: state.emotes.filter((e) => e.id !== id) })),
 
   // ─── Modals ──────────────────────────────────────────────────────────────────
   setShowRoundResult: (showRoundResult) => set({ showRoundResult }),
@@ -145,35 +181,6 @@ export const useGameStore = create<GameStore>((set) => ({
   setShowReplay: (showReplay) => set({ showReplay }),
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
-  initializeMockGame: () =>
-    set({
-      currentUser: MOCK_CURRENT_USER,
-      room: MOCK_ROOM,
-      players: MOCK_PLAYERS,
-      gameStatus: 'playing',
-      round: MOCK_ROUND,
-      messages: MOCK_MESSAGES,
-      strokes: MOCK_STROKES,
-      settings: MOCK_SETTINGS,
-      connectionStatus: 'connected',
-      showRoundResult: false,
-      showGameEnd: false,
-      roundResult: MOCK_ROUND_RESULT,
-    }),
-
-  initializeMockLobby: () =>
-    set({
-      currentUser: MOCK_CURRENT_USER,
-      room: MOCK_ROOM,
-      players: MOCK_PLAYERS,
-      gameStatus: 'lobby',
-      round: null,
-      messages: [],
-      strokes: [],
-      settings: MOCK_SETTINGS,
-      connectionStatus: 'connected',
-    }),
-
   resetGame: () =>
     set({
       room: null,
@@ -185,5 +192,6 @@ export const useGameStore = create<GameStore>((set) => ({
       showRoundResult: false,
       showGameEnd: false,
       roundResult: null,
+      emotes: [],
     }),
 }));

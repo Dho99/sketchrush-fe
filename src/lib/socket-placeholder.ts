@@ -11,7 +11,7 @@
  *   - room:player_list → update player list
  *   - player:ready    → update player ready state
  *   - game:start      → update game status to 'playing', receive round state
- *   - round:start     → update round state, start timer
+ *   - round:clue      → add clue to store
  *   - draw:stroke     → add stroke to store
  *   - draw:clear      → clear strokes
  *   - chat:message    → add message to store
