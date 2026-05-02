@@ -10,6 +10,7 @@ export function useSocketRoom(roomCode: string | undefined) {
   const { 
     setPlayers, 
     setRoom, 
+    setSettings,
     updatePlayerStatus,
     setGameStatus,
   } = useGameStore();
@@ -42,6 +43,17 @@ export function useSocketRoom(roomCode: string | undefined) {
           }));
           setPlayers(mappedPlayers);
         }
+
+        if (data.settings) {
+          setSettings({
+            ...useGameStore.getState().settings,
+            ...data.settings,
+            wordPack: data.settings.selectedWordPackId || data.settings.wordPack || 'general',
+            selectedWordPackId: data.settings.selectedWordPackId || data.settings.wordPack || 'general',
+            wordPackName: data.settings.wordPackName || data.selectedWordPack?.name || 'General',
+            customWords: Array.isArray(data.settings.customWords) ? data.settings.customWords : [],
+          });
+        }
       }
     });
 
@@ -64,18 +76,62 @@ export function useSocketRoom(roomCode: string | undefined) {
     });
 
     socketService.on('game:state', (data: any) => {
-      if (data && data.status) {
-        setGameStatus(data.status.toLowerCase() as any);
-        if (data.status === 'PLAYING') {
+      if (data && data.runtime?.status) {
+        setGameStatus(data.runtime.status.toLowerCase() as any);
+        if (data.runtime.status === 'PLAYING') {
+          useGameStore.getState().setIsStartingGame(false);
           navigate(`/game/${roomCode}`);
+        } else if (data.runtime.status === 'STARTING') {
+          useGameStore.getState().setIsStartingGame(true);
+          useGameStore.getState().setStartGameMessage('Preparing your game...');
         }
       }
+    });
+
+    socketService.on('game:starting', (data: { message: string }) => {
+      useGameStore.getState().setIsStartingGame(true);
+      useGameStore.getState().setStartGameMessage(data.message || 'Preparing game...');
+    });
+
+    socketService.on('round:preparing', (data: { message: string }) => {
+      useGameStore.getState().setIsStartingGame(true);
+      useGameStore.getState().setStartGameMessage(data.message || 'Preparing round...');
+    });
+
+    socketService.on('round:start', (data: any) => {
+      useGameStore.getState().setIsStartingGame(false);
+      navigate(`/game/${roomCode}`);
     });
 
     socketService.on('room:deleted', (data: { reason: string }) => {
         toast.error(`Room closed: ${data.reason}`);
         useGameStore.getState().resetGame();
-        navigate('/');
+        navigate('/public-lobby');
+    });
+
+    socketService.on('room:left', (data: { redirectTo: string, message: string }) => {
+        toast.info(data.message || 'You left the room.');
+        useGameStore.getState().resetGame();
+        navigate(data.redirectTo || '/public-lobby', { replace: true });
+    });
+
+    socketService.on('game:ended', (data: { message: string, leaderboard?: any[], redirectTo: string }) => {
+        toast.info(data.message || 'Game ended.');
+        if (data.leaderboard) {
+            const mappedPlayers: Player[] = data.leaderboard.map((p: any) => ({
+                id: p.playerId || p.id,
+                name: p.name || p.nickname,
+                avatarColor: p.avatar || '#F59E0B',
+                score: p.score,
+                status: p.status.toLowerCase(),
+                isHost: p.isHost,
+                isReady: p.status === 'READY',
+                role: p.role?.toLowerCase() || 'guesser'
+            }));
+            setPlayers(mappedPlayers);
+        }
+        setGameStatus('game-end');
+        useGameStore.getState().setShowGameEnd(true);
     });
 
     socketService.on('room:error', (error: any) => {
@@ -85,15 +141,26 @@ export function useSocketRoom(roomCode: string | undefined) {
       }
     });
 
+    socketService.on('game:error', (error: any) => {
+      useGameStore.getState().setIsStartingGame(false);
+      toast.error(error.message || 'Game error occurred');
+    });
+
     return () => {
       socketService.off('room:state');
       socketService.off('player:list');
       socketService.off('player:status');
       socketService.off('game:state');
+      socketService.off('game:starting');
+      socketService.off('round:preparing');
+      socketService.off('round:start');
       socketService.off('room:deleted');
+      socketService.off('room:left');
+      socketService.off('game:ended');
       socketService.off('room:error');
+      socketService.off('game:error');
     };
-  }, [roomCode, navigate, setPlayers, setRoom, updatePlayerStatus, setGameStatus]);
+  }, [roomCode, navigate, setPlayers, setRoom, setSettings, updatePlayerStatus, setGameStatus]);
 
   const toggleReady = (isReady: boolean) => {
     if (!roomCode) return;
@@ -109,7 +176,6 @@ export function useSocketRoom(roomCode: string | undefined) {
   const leaveRoom = () => {
     if (!roomCode) return;
     socketService.emit('room:leave', { roomCode });
-    navigate('/join');
   };
 
   return { toggleReady, leaveRoom };

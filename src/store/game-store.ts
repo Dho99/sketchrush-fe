@@ -1,197 +1,244 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 import type {
-  GameState,
-  Player,
-  Room,
-  GameStatus,
-  RoundState,
-  ChatMessage,
-  Stroke,
-  GameSettings,
-  ConnectionStatus,
-  RoundResult,
-  RoundClue,
-} from '../lib/types';
+    GameState,
+    Player,
+    Room,
+    GameStatus,
+    RoundState,
+    ChatMessage,
+    Stroke,
+    GameSettings,
+    ConnectionStatus,
+    RoundResult,
+    RoundClue,
+    WordOption,
+} from "../lib/types";
 
 export interface FloatingEmote {
-  id: string;
-  playerId: string;
-  playerName: string;
-  emote: string;
-  sentAt: number;
+    id: string;
+    playerId: string;
+    playerName: string;
+    emote: string;
+    sentAt: number;
 }
 
 interface GameStore extends GameState {
-  // Setters
-  setCurrentUser: (player: Player | null) => void;
-  setRoom: (room: Room | null) => void;
-  setPlayers: (players: Player[]) => void;
-  setGameStatus: (status: GameStatus) => void;
-  setRound: (round: RoundState | null) => void;
-  addClue: (clue: RoundClue) => void;
-  clearClues: () => void;
-  setSettings: (settings: GameSettings) => void;
-  updateSettings: (settings: Partial<GameSettings>) => void;
-  setConnectionStatus: (status: ConnectionStatus) => void;
-  setRoundResult: (result: RoundResult | null) => void;
+    // Setters
+    setCurrentUser: (player: Player | null) => void;
+    setRoom: (room: Room | null) => void;
+    setPlayers: (players: Player[]) => void;
+    setGameStatus: (status: GameStatus) => void;
+    setRound: (round: RoundState | null) => void;
+    addClue: (clue: RoundClue) => void;
+    clearClues: () => void;
+    setSettings: (settings: GameSettings) => void;
+    updateSettings: (settings: Partial<GameSettings>) => void;
+    setConnectionStatus: (status: ConnectionStatus) => void;
+    setRoundResult: (result: RoundResult | null) => void;
+    setWordOptions: (roundId: string | null, options: WordOption[]) => void;
+    setIsWordSelectionOpen: (isOpen: boolean) => void;
+    setIsSelectingWord: (isSelecting: boolean) => void;
+    setIsStartingGame: (isStarting: boolean) => void;
+    setStartGameMessage: (message: string) => void;
+    setIsLeavingGame: (isLeaving: boolean) => void;
 
-  // Player actions
-  updatePlayerScore: (playerId: string, score: number) => void;
-  updatePlayerStatus: (playerId: string, status: Player['status']) => void;
-  updatePlayerReady: (playerId: string, isReady: boolean) => void;
+    // Player actions
+    updatePlayerScore: (playerId: string, score: number) => void;
+    updatePlayerStatus: (playerId: string, status: Player["status"]) => void;
+    updatePlayerReady: (playerId: string, isReady: boolean) => void;
 
-  // Messages
-  addMessage: (message: ChatMessage) => void;
-  clearMessages: () => void;
+    isStartingGame: boolean;
+    startGameMessage: string;
+    isLeavingGame: boolean;
 
-  // Strokes
-  setStrokes: (strokes: Stroke[]) => void;
-  addStroke: (stroke: Stroke) => void;
-  removeLastStroke: () => void;
-  clearStrokes: () => void;
+    // Messages
+    addMessage: (message: ChatMessage) => void;
+    clearMessages: () => void;
 
-  // Timer
-  decrementTimer: () => void;
-  setTimer: (seconds: number) => void;
+    // Strokes
+    setStrokes: (strokes: Stroke[]) => void;
+    addStroke: (stroke: Stroke) => void;
+    removeLastStroke: () => void;
+    clearStrokes: () => void;
 
-  // Emotes
-  addEmote: (emote: FloatingEmote) => void;
-  removeEmote: (id: string) => void;
+    // Timer
+    decrementTimer: () => void;
+    setTimer: (seconds: number) => void;
 
-  // Modals
-  setShowRoundResult: (show: boolean) => void;
-  setShowGameEnd: (show: boolean) => void;
-  setShowRules: (show: boolean) => void;
-  setShowReplay: (show: boolean) => void;
+    // Emotes
+    addEmote: (emote: FloatingEmote) => void;
+    removeEmote: (id: string) => void;
 
-  // Lifecycle
-  resetGame: () => void;
+    // Modals
+    setShowRoundResult: (show: boolean) => void;
+    setShowGameEnd: (show: boolean) => void;
+    setShowRules: (show: boolean) => void;
+    setShowReplay: (show: boolean) => void;
+
+    // Lifecycle
+    resetGame: () => void;
+
+    // Emotes
+    emotes: FloatingEmote[];
 }
 
 const defaultSettings: GameSettings = {
-  maxRounds: 5,
-  roundDuration: 90,
-  wordPack: 'general',
-  enableReplay: true,
-  enableSmartTolerance: true,
-  enableHints: true,
-  enableAiClue: true,
-  clueTriggerSeconds: 10,
-  maxCluesPerRound: 3,
+    maxRounds: 5,
+    roundDuration: 90,
+    wordPack: "general",
+    selectedWordPackId: "general",
+    wordPackName: "General",
+    customWords: [],
+    enableReplay: true,
+    enableSmartTolerance: true,
+    enableHints: true,
+    enableAiClue: true,
+    clueTriggerSeconds: 10,
+    maxCluesPerRound: 3,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
-  // ─── Initial State ───────────────────────────────────────────────────────────
-  currentUser: null,
-  room: null,
-  players: [],
-  gameStatus: 'lobby',
-  round: null,
-  messages: [],
-  strokes: [],
-  settings: defaultSettings,
-  showRoundResult: false,
-  showGameEnd: false,
-  showRules: false,
-  showReplay: false,
-  roundResult: null,
-  connectionStatus: 'connected',
-  emotes: [],
+    // ─── Initial State ───────────────────────────────────────────────────────────
+    currentUser: null,
+    room: null,
+    players: [],
+    gameStatus: "lobby",
+    round: null,
+    messages: [],
+    strokes: [],
+    settings: defaultSettings,
+    showRoundResult: false,
+    showGameEnd: false,
+    showRules: false,
+    showReplay: false,
+    roundResult: null,
+    wordOptions: [],
+    wordOptionsRoundId: null,
+    isWordSelectionOpen: false,
+    isSelectingWord: false,
+    connectionStatus: "connected",
+    emotes: [],
+    isStartingGame: false,
+    startGameMessage: "",
+    isLeavingGame: false,
 
-  // ─── Setters ─────────────────────────────────────────────────────────────────
-  setCurrentUser: (currentUser) => set({ currentUser }),
-  setRoom: (room) => set({ room }),
-  setPlayers: (players) => set({ players }),
-  setGameStatus: (gameStatus) => set({ gameStatus }),
-  setRound: (round) => set({ round }),
-  addClue: (clue) =>
-    set((state) => {
-      if (!state.round) return {};
-      if (state.round.clues.some((c) => c.index === clue.index)) return {};
-      return {
-        round: { ...state.round, clues: [...state.round.clues, clue] },
-      };
-    }),
-  clearClues: () =>
-    set((state) => {
-      if (!state.round) return {};
-      return {
-        round: { ...state.round, clues: [] },
-      };
-    }),
-  setSettings: (settings) => set({ settings }),
-  updateSettings: (newSettings) =>
-    set((state) => ({ settings: { ...state.settings, ...newSettings } })),
-  setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
-  setRoundResult: (roundResult) => set({ roundResult }),
+    // ─── Setters ─────────────────────────────────────────────────────────────────
+    setCurrentUser: (currentUser) => set({ currentUser }),
+    setRoom: (room) => set({ room }),
+    setPlayers: (players) => set({ players }),
+    setGameStatus: (gameStatus) => set({ gameStatus }),
+    setRound: (round) => set({ round }),
+    addClue: (clue) =>
+        set((state) => {
+            if (!state.round) return {};
+            if (state.round.clues.some((c) => c.index === clue.index))
+                return {};
+            return {
+                round: { ...state.round, clues: [...state.round.clues, clue] },
+            };
+        }),
+    clearClues: () =>
+        set((state) => {
+            if (!state.round) return {};
+            return {
+                round: { ...state.round, clues: [] },
+            };
+        }),
+    setSettings: (settings) => set({ settings }),
+    updateSettings: (newSettings) =>
+        set((state) => ({ settings: { ...state.settings, ...newSettings } })),
+    setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
+    setRoundResult: (roundResult) => set({ roundResult }),
+    setWordOptions: (wordOptionsRoundId, wordOptions) =>
+        set({ wordOptionsRoundId, wordOptions, isWordSelectionOpen: wordOptions.length > 0 }),
+    setIsWordSelectionOpen: (isWordSelectionOpen) => set({ isWordSelectionOpen }),
+    setIsSelectingWord: (isSelectingWord) => set({ isSelectingWord }),
+    setIsStartingGame: (isStartingGame) => set({ isStartingGame }),
+    setStartGameMessage: (startGameMessage) => set({ startGameMessage }),
+    setIsLeavingGame: (isLeavingGame) => set({ isLeavingGame }),
 
-  // ─── Player Actions ──────────────────────────────────────────────────────────
-  updatePlayerScore: (playerId, score) =>
-    set((state) => ({
-      players: state.players.map((p) => (p.id === playerId ? { ...p, score } : p)),
-    })),
-  updatePlayerStatus: (playerId, status) =>
-    set((state) => ({
-      players: state.players.map((p) => (p.id === playerId ? { ...p, status } : p)),
-    })),
-  updatePlayerReady: (playerId, isReady) =>
-    set((state) => ({
-      players: state.players.map((p) => (p.id === playerId ? { ...p, isReady } : p)),
-    })),
+    // ─── Player Actions ──────────────────────────────────────────────────────────
+    updatePlayerScore: (playerId, score) =>
+        set((state) => ({
+            players: state.players.map((p) =>
+                p.id === playerId ? { ...p, score } : p,
+            ),
+        })),
+    updatePlayerStatus: (playerId, status) =>
+        set((state) => ({
+            players: state.players.map((p) =>
+                p.id === playerId ? { ...p, status } : p,
+            ),
+        })),
+    updatePlayerReady: (playerId, isReady) =>
+        set((state) => ({
+            players: state.players.map((p) =>
+                p.id === playerId ? { ...p, isReady } : p,
+            ),
+        })),
 
-  // ─── Messages ────────────────────────────────────────────────────────────────
-  addMessage: (message) =>
-    set((state) => ({ messages: [...state.messages, message] })),
-  clearMessages: () => set({ messages: [] }),
+    // ─── Messages ────────────────────────────────────────────────────────────────
+    addMessage: (message) =>
+        set((state) => ({ messages: [...state.messages, message] })),
+    clearMessages: () => set({ messages: [] }),
 
-  // ─── Strokes ─────────────────────────────────────────────────────────────────
-  setStrokes: (strokes) => set({ strokes }),
-  addStroke: (stroke) =>
-    set((state) => ({ strokes: [...state.strokes, stroke] })),
-  removeLastStroke: () =>
-    set((state) => ({ strokes: state.strokes.slice(0, -1) })),
-  clearStrokes: () => set({ strokes: [] }),
+    // ─── Strokes ─────────────────────────────────────────────────────────────────
+    setStrokes: (strokes) => set({ strokes }),
+    addStroke: (stroke) =>
+        set((state) => ({ strokes: [...state.strokes, stroke] })),
+    removeLastStroke: () =>
+        set((state) => ({ strokes: state.strokes.slice(0, -1) })),
+    clearStrokes: () => set({ strokes: [] }),
 
-  // ─── Timer ───────────────────────────────────────────────────────────────────
-  decrementTimer: () =>
-    set((state) => {
-      if (!state.round) return {};
-      return {
-        round: { ...state.round, timeLeft: Math.max(0, state.round.timeLeft - 1) },
-      };
-    }),
-  setTimer: (seconds) =>
-    set((state) => {
-      if (!state.round) return {};
-      return {
-        round: { ...state.round, timeLeft: seconds },
-      };
-    }),
+    // ─── Timer ───────────────────────────────────────────────────────────────────
+    decrementTimer: () =>
+        set((state) => {
+            if (!state.round) return {};
+            return {
+                round: {
+                    ...state.round,
+                    timeLeft: Math.max(0, state.round.timeLeft - 1),
+                },
+            };
+        }),
+    setTimer: (seconds) =>
+        set((state) => {
+            if (!state.round) return {};
+            return {
+                round: { ...state.round, timeLeft: seconds },
+            };
+        }),
 
-  // ─── Emotes ──────────────────────────────────────────────────────────────────
-  addEmote: (emote) =>
-    set((state) => ({ emotes: [...state.emotes, emote] })),
-  removeEmote: (id) =>
-    set((state) => ({ emotes: state.emotes.filter((e) => e.id !== id) })),
+    // ─── Emotes ──────────────────────────────────────────────────────────────────
+    addEmote: (emote) => set((state) => ({ emotes: [...state.emotes, emote] })),
+    removeEmote: (id) =>
+        set((state) => ({ emotes: state.emotes.filter((e) => e.id !== id) })),
 
-  // ─── Modals ──────────────────────────────────────────────────────────────────
-  setShowRoundResult: (showRoundResult) => set({ showRoundResult }),
-  setShowGameEnd: (showGameEnd) => set({ showGameEnd }),
-  setShowRules: (showRules) => set({ showRules }),
-  setShowReplay: (showReplay) => set({ showReplay }),
+    // ─── Modals ──────────────────────────────────────────────────────────────────
+    setShowRoundResult: (showRoundResult) => set({ showRoundResult }),
+    setShowGameEnd: (showGameEnd) => set({ showGameEnd }),
+    setShowRules: (showRules) => set({ showRules }),
+    setShowReplay: (showReplay) => set({ showReplay }),
 
-  // ─── Lifecycle ───────────────────────────────────────────────────────────────
-  resetGame: () =>
-    set({
-      room: null,
-      players: [],
-      gameStatus: 'lobby',
-      round: null,
-      messages: [],
-      strokes: [],
-      showRoundResult: false,
-      showGameEnd: false,
-      roundResult: null,
-      emotes: [],
-    }),
+    // ─── Lifecycle ───────────────────────────────────────────────────────────────
+    resetGame: () =>
+        set({
+            room: null,
+            players: [],
+            gameStatus: "lobby",
+            round: null,
+            messages: [],
+            strokes: [],
+            showRoundResult: false,
+            showGameEnd: false,
+            showReplay: false,
+            roundResult: null,
+            wordOptions: [],
+            wordOptionsRoundId: null,
+            isWordSelectionOpen: false,
+            isSelectingWord: false,
+            emotes: [],
+            isStartingGame: false,
+            startGameMessage: "",
+        }),
 }));

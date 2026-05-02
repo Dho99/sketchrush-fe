@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { Send } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import type { ChatMessage, MessageType } from '../../lib/types';
+import type { ChatMessage } from '../../lib/types';
+import { useGameStore } from '../../store/game-store';
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -24,24 +25,38 @@ const messageTextStyles: Record<string, string> = {
 };
 
 function ChatMessageItem({ message }: ChatMessageItemProps) {
-  const isSystem = message.type !== 'normal';
+  const isSystem = message.type === 'system' || message.type === 'correct-guess' || message.type === 'close-guess' || message.type === 'warning';
   const typeKey = message.type as string;
+  const currentUserId = useGameStore((state) => state.currentUser?.id);
+  const isOwn = message.playerId === currentUserId;
 
   return (
-    <div className={cn('text-sm', messageStyles[typeKey] || messageStyles.normal)}>
+    <div className={cn(
+        'text-sm max-w-[90%]', 
+        isSystem ? 'mx-auto w-full' : (isOwn ? 'ml-auto' : 'mr-auto'),
+        messageStyles[typeKey] || messageStyles.normal
+    )}>
       {isSystem ? (
-        <p className={cn('text-xs font-bold', messageTextStyles[typeKey] || messageTextStyles.normal)}>
+        <p className={cn('text-[10px] font-bold text-center uppercase tracking-widest', messageTextStyles[typeKey] || messageTextStyles.normal)}>
           {message.content}
         </p>
       ) : (
-        <p className="text-stone-800 dark:text-stone-200">
-          <span
-            className="font-bold mr-1"
-          >
-            {message.playerName}:
+        <div className={cn(
+            'flex flex-col',
+            isOwn ? 'items-end' : 'items-start'
+        )}>
+          <span className="text-[10px] font-black text-stone-400 uppercase mb-0.5 px-1">
+            {message.playerName || 'Unknown Player'}
           </span>
-          <span className={messageTextStyles[typeKey] || messageTextStyles.normal}>{message.content}</span>
-        </p>
+          <div className={cn(
+              'px-3 py-1.5 rounded-2xl border-2 shadow-sm',
+              isOwn 
+                ? 'bg-amber-400 border-stone-800 text-stone-900 rounded-tr-none' 
+                : 'bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 rounded-tl-none'
+          )}>
+            <p className="leading-tight font-bold">{message.content}</p>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -58,6 +73,8 @@ export function ChatPanel({ messages, isDrawer, onSendMessage, placeholder }: Ch
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const currentUser = useGameStore((state) => state.currentUser);
+  const isSpectator = currentUser?.role === 'spectator';
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -67,41 +84,45 @@ export function ChatPanel({ messages, isDrawer, onSendMessage, placeholder }: Ch
     e.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
+
+    const role = useGameStore.getState().currentUser?.role || 'guesser';
+    const playerId = useGameStore.getState().currentUser?.id;
+    const roomCode = useGameStore.getState().room?.code;
+    const roundId = useGameStore.getState().round?.roundId;
+    if (isSpectator) {
+      setInput('');
+      return;
+    }
+
+    if (import.meta.env.DEV) {
+        if (role === 'drawer') {
+            console.log("TRACE: frontend:chat:send", { roomCode, roundId, message: trimmed, currentPlayerId: playerId, role });
+        } else if (role === 'guesser') {
+            console.log("TRACE: frontend:guess:submit", { roomCode, roundId, guess: trimmed, currentPlayerId: playerId, role });
+        }
+    }
+
     onSendMessage(trimmed);
     setInput('');
   };
 
-  // Placeholder functions for socket integration
-  const handleSendMessage = (text: string) => {
-    // TODO: Replace with socket.emit('chat:send', { message: text })
-    onSendMessage(text);
-  };
-
-  const handleGuessSubmit = (guess: string) => {
-    // TODO: Replace with socket.emit('guess:submit', { guess })
-    // The server will validate and respond with 'guess:correct' or 'guess:close'
-    onSendMessage(guess);
-  };
-
-  void handleGuessSubmit;
-  void handleSendMessage;
-
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-stone-50/50 dark:bg-black/20">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b-2 border-stone-200 dark:border-stone-700">
-        <span className="text-sm font-bold text-stone-800 dark:text-stone-200">
+      <div className="flex items-center gap-2 px-3 py-2 border-b-2 border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900">
+        <span className="text-xs font-black uppercase tracking-widest text-stone-500 dark:text-stone-400">
           {isDrawer ? '💬 Chat' : '🎯 Guess & Chat'}
         </span>
-        <span className="ml-auto text-xs text-stone-400 dark:text-stone-500">{messages.length} messages</span>
+        <span className="ml-auto text-[10px] font-bold text-stone-300 dark:text-stone-600">{messages.length}</span>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5 min-h-0">
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4 min-h-0 custom-scrollbar">
         {messages.length === 0 && (
-          <p className="text-xs text-stone-400 dark:text-stone-500 text-center py-4">
-            No messages yet. Start chatting!
-          </p>
+          <div className="flex flex-col items-center justify-center h-full opacity-20 grayscale py-10">
+              <span className="text-4xl mb-2">💬</span>
+              <p className="text-xs font-bold uppercase tracking-widest">No messages</p>
+          </div>
         )}
         {messages.map((msg) => (
           <ChatMessageItem key={msg.id} message={msg} />
@@ -112,7 +133,7 @@ export function ChatPanel({ messages, isDrawer, onSendMessage, placeholder }: Ch
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className="p-2 border-t-2 border-stone-200 dark:border-stone-700 flex gap-2"
+        className="p-3 border-t-2 border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 flex gap-2"
       >
         <input
           ref={inputRef}
@@ -120,31 +141,32 @@ export function ChatPanel({ messages, isDrawer, onSendMessage, placeholder }: Ch
           onChange={(e) => setInput(e.target.value)}
           placeholder={placeholder ?? (isDrawer ? 'Chat with players...' : 'Type your guess here!')}
           aria-label={isDrawer ? 'Chat message' : 'Guess the word'}
+          disabled={isSpectator}
           className={cn(
-            'flex-1 px-3 py-2 rounded-xl border-2 border-stone-300 dark:border-stone-600',
-            'bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100',
-            'placeholder:text-stone-400 dark:placeholder:text-stone-500',
+            'flex-1 px-4 py-2.5 rounded-xl border-2 border-stone-200 dark:border-stone-800',
+            'bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100',
+            'placeholder:text-stone-400 dark:placeholder:text-stone-600',
             'focus:outline-none focus:border-amber-400 dark:focus:border-amber-500',
-            'text-sm transition-colors',
+            'text-sm font-bold transition-all',
           )}
           maxLength={120}
           autoComplete="off"
         />
         <button
           type="submit"
-          disabled={!input.trim()}
+          disabled={!input.trim() || isSpectator}
           aria-label="Send message"
           className={cn(
-            'p-2.5 rounded-xl border-2 border-stone-800 dark:border-stone-400',
-            'bg-amber-400 hover:bg-amber-500 disabled:bg-stone-200 dark:disabled:bg-stone-700',
-            'text-stone-900 disabled:text-stone-400 dark:disabled:text-stone-500',
-            'shadow-[2px_2px_0px_#1C1917] dark:shadow-[2px_2px_0px_rgba(255,255,255,0.1)]',
+            'p-2.5 rounded-xl border-2 border-stone-800 dark:border-stone-500',
+            'bg-amber-400 hover:bg-amber-500 disabled:bg-stone-100 dark:disabled:bg-stone-900',
+            'text-stone-900 disabled:text-stone-300 dark:disabled:text-stone-700',
+            'shadow-[2px_2px_0px_#1C1917] dark:shadow-[2px_2px_0px_rgba(255,255,255,0.05)]',
             'active:translate-y-[1px] active:shadow-[1px_1px_0px_#1C1917]',
             'disabled:shadow-none disabled:translate-y-0',
             'transition-all',
           )}
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-5 h-5" />
         </button>
       </form>
     </div>

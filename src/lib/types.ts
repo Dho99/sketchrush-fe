@@ -30,6 +30,9 @@ export interface GameSettings {
   maxRounds: number;
   roundDuration: number;
   wordPack: string;
+  selectedWordPackId?: string;
+  wordPackName?: string;
+  customWords?: string[];
   enableReplay: boolean;
   enableSmartTolerance: boolean;
   enableHints: boolean;
@@ -53,9 +56,17 @@ export interface RoundState {
   currentDrawerId: string;
   wordHint: string;
   secretWord: string;
+  duration: number;
   timeLeft: number;
   phase: RoundPhase;
   clues: RoundClue[];
+  nextDrawerId?: string | null;
+  nextDrawerName?: string | null;
+}
+
+export interface WordOption {
+  id: string;
+  label: string;
 }
 
 // ─── Chat ──────────────────────────────────────────────────────────────────────
@@ -99,10 +110,21 @@ export interface WordPack {
 // ─── Round Result ──────────────────────────────────────────────────────────────
 
 export interface RoundResult {
+  roomCode?: string;
+  roundId: string;
+  roundNumber?: number;
+  maxRounds?: number;
+  isLastRound?: boolean;
   correctWord: string;
-  correctGuessers: { playerId: string; playerName: string; pointsGained: number; guessTime: number }[];
+  correctGuessers: { playerId: string; playerName: string; pointsGained: number; scoreGained?: number; guessTime: number; timeTaken?: number }[];
+  guessedPlayers?: { playerId: string; playerName: string; scoreGained: number; timeTaken: number }[];
   drawerBonus: number;
   drawerId: string;
+  drawerName?: string;
+  nextDrawerId?: string | null;
+  nextDrawerName?: string | null;
+  canChooseNextWordPlayerId?: string | null;
+  leaderboard?: Player[];
 }
 
 // ─── Global Game State ─────────────────────────────────────────────────────────
@@ -122,4 +144,8 @@ export interface GameState {
   showReplay: boolean;
   roundResult: RoundResult | null;
   connectionStatus: ConnectionStatus;
+  wordOptions: WordOption[];
+  wordOptionsRoundId: string | null;
+  isWordSelectionOpen: boolean;
+  isSelectingWord: boolean;
 }

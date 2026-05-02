@@ -2,11 +2,29 @@ import { useEffect, useState, useCallback } from 'react';
 import { useBlocker, useNavigate } from 'react-router';
 import { socketService } from '../lib/socket';
 import { getApiBaseUrl } from '../services/api-client';
+import { useGameStore } from '../store/game-store';
 
 interface UseRoomExitGuardProps {
   roomCode?: string;
   isHost: boolean;
   isInRoom: boolean;
+}
+
+/**
+ * Helper to check if navigation is still within the same room scope.
+ * This allows transitioning from Lobby to Game (and vice versa) without
+ * triggering the "Leave Room" confirmation modal.
+ */
+function isSameRoomScope(nextPath: string, currentRoomCode?: string): boolean {
+    if (!currentRoomCode) return false;
+    const code = currentRoomCode.toLowerCase();
+    const path = nextPath.toLowerCase();
+    
+    // Whitelisted routes that belong to the same room session
+    const lobbyRegex = new RegExp(`^/lobby/${code}(/|$)`);
+    const gameRegex = new RegExp(`^/game/${code}(/|$)`);
+    
+    return lobbyRegex.test(path) || gameRegex.test(path);
 }
 
 export function useRoomExitGuard({
@@ -19,13 +37,10 @@ export function useRoomExitGuard({
   const navigate = useNavigate();
 
   // 0. Handle Post-Reload Redirect
-  // If the user confirmed a reload, they will end up back at this URL.
-  // We check if we set the reload flag before the refresh happened.
   useEffect(() => {
     const reloadedFromRoom = sessionStorage.getItem('reloaded_from_room');
     if (reloadedFromRoom) {
       sessionStorage.removeItem('reloaded_from_room');
-      // Redirect to a safe place (Public Lobby) to avoid refetch errors
       navigate('/public-lobby', { replace: true });
     }
   }, [navigate]);
@@ -35,10 +50,8 @@ export function useRoomExitGuard({
     if (!isInRoom) return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Set a flag so we know we reloaded from a room state
       sessionStorage.setItem('reloaded_from_room', 'true');
 
-      // Send beacon for best-effort cleanup
       if (roomCode) {
         const endpoint = isHost ? 'delete-on-exit' : 'leave-on-exit';
         const url = `${getApiBaseUrl()}/api/rooms/${roomCode}/${endpoint}`;
@@ -46,13 +59,10 @@ export function useRoomExitGuard({
       }
 
       e.preventDefault();
-      e.returnValue = ''; // Standard way to show browser confirmation
+      e.returnValue = ''; 
     };
 
-    // If the user clicks "Cancel" on the reload dialog, the page doesn't unload.
-    // We should clear the flag if they continue interacting with the page.
     const clearReloadFlagOnFocus = () => {
-        // Use a small timeout to ensure we don't clear it before the reload actually starts
         setTimeout(() => {
             sessionStorage.removeItem('reloaded_from_room');
         }, 1000);
@@ -67,28 +77,33 @@ export function useRoomExitGuard({
     };
   }, [isInRoom, roomCode, isHost]);
 
-  // 2. Page Visibility / Focus detection
+  // 2. Page Visibility / Focus detection (Placeholder for future idle logic)
   useEffect(() => {
     if (!isInRoom) return;
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        // Optional: emit player:inactive
-      } else {
-        // Optional: emit player:active
-      }
-    };
-
+    const handleVisibilityChange = () => {};
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isInRoom]);
 
   // 3. React Router Navigation Blocker
   const blocker = useBlocker(({ nextLocation }) => {
-      // Don't block if we're not in a room or if we're explicitly leaving
-      if (!isInRoom || isProcessingExit) return false;
+      // 1. Don't block if we're not in a room session
+      if (!isInRoom) return false;
+
+      const isLeavingGame = useGameStore.getState().isLeavingGame;
+      const gameStatus = useGameStore.getState().gameStatus;
+      if (isLeavingGame || gameStatus === 'game-end') return false;
+      if (nextLocation.pathname === '/public-lobby') return false;
       
-      // Allow internal navigation to the same room or if we are already leaving
+      // 2. Don't block if we've already confirmed the exit
+      if (isProcessingExit) return false;
+      
+      // 3. ALLOW internal navigation between lobby and game for the SAME roomCode
+      if (isSameRoomScope(nextLocation.pathname, roomCode)) {
+          return false;
+      }
+      
+      // Block all other navigations (Home, Public Lobby, logout, etc.)
       return true;
   });
 
@@ -108,7 +123,7 @@ export function useRoomExitGuard({
         }
     }
     
-    // Small delay to allow emit to reach server if possible
+    // Grace period for socket emission before proceeding with navigation
     await new Promise(resolve => setTimeout(resolve, 200));
     
     if (blocker.state === 'blocked') {
@@ -124,8 +139,13 @@ export function useRoomExitGuard({
     setShowConfirmModal(false);
   }, [blocker]);
 
+  const requestExit = useCallback(() => {
+    setShowConfirmModal(true);
+  }, []);
+
   return {
     showConfirmModal,
+    requestExit,
     confirmExit,
     cancelExit,
     isProcessingExit,

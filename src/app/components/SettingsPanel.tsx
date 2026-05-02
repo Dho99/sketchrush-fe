@@ -82,7 +82,7 @@ export function SettingsPanel({
     roomCode,
 }: SettingsPanelProps) {
     const handleDeleteRoom = () => {
-        console.log("Emitting room:delete with", { roomCode, isHost });
+        // console.log("Emitting room:delete with", { roomCode, isHost });
         socketService.emit("room:delete", { roomCode, isHost });
     };
 
@@ -104,9 +104,17 @@ export function SettingsPanel({
                         Word Pack
                     </label>
                     <WordPackSelector
-                        value={settings.wordPack}
-                        onChange={(v) => onChange({ wordPack: v })}
-                        disabled={!isHost}
+                        currentPack={settings.selectedWordPackId || settings.wordPack}
+                        customWords={settings.customWords || []}
+                        onChange={(selectedWordPackId, wordPackName, customWords) =>
+                            onChange({
+                                wordPack: selectedWordPackId,
+                                selectedWordPackId,
+                                wordPackName,
+                                customWords,
+                            })
+                        }
+                        isHost={isHost}
                     />
                 </div>
 

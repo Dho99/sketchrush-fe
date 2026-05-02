@@ -105,6 +105,9 @@ export const MOCK_SETTINGS: GameSettings = {
   maxRounds: 5,
   roundDuration: 90,
   wordPack: 'general',
+  selectedWordPackId: 'general',
+  wordPackName: 'General',
+  customWords: [],
   enableReplay: true,
   enableSmartTolerance: true,
   enableHints: true,
@@ -116,6 +119,7 @@ export const MOCK_SETTINGS: GameSettings = {
 // ─── Round Result ──────────────────────────────────────────────────────────────
 
 export const MOCK_ROUND_RESULT: RoundResult = {
+  roundId: 'r1',
   correctWord: 'GAJAH',
   correctGuessers: [
     { playerId: 'p2', playerName: 'Budi', pointsGained: 180, guessTime: 12 },

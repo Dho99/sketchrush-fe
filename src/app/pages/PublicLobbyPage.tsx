@@ -36,7 +36,7 @@ interface PublicRoom {
 export function PublicLobbyPage() {
   const navigate = useNavigate();
   const { user: authUser } = useAuthStore();
-  const { setCurrentUser, setRoom } = useGameStore();
+  const { setCurrentUser, setRoom, resetGame, setIsLeavingGame, setShowGameEnd, setShowReplay } = useGameStore();
 
   const [rooms, setRooms] = useState<PublicRoom[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,10 +59,14 @@ export function PublicLobbyPage() {
   };
 
   useEffect(() => {
+    resetGame();
+    setIsLeavingGame(false);
+    setShowGameEnd(false);
+    setShowReplay(false);
     fetchRooms();
     const interval = setInterval(() => fetchRooms(true), 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [resetGame, setIsLeavingGame, setShowGameEnd, setShowReplay]);
 
   const handleJoinRoom = (roomCode: string, isSpectator = false) => {
     if (!authUser) {

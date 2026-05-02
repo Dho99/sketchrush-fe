@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Trophy, Crown, Home, RefreshCw } from 'lucide-react';
+import { Trophy, Crown, Home } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { PlayerAvatar } from './PlayerAvatar';
 import type { Player } from '../../lib/types';
@@ -7,11 +7,10 @@ import { cn } from '../../lib/utils';
 
 interface GameEndModalProps {
   players: Player[];
-  onPlayAgain: () => void;
-  onBackToHome: () => void;
+  onBackToPublicLobby: () => void;
 }
 
-export function GameEndModal({ players, onPlayAgain, onBackToHome }: GameEndModalProps) {
+export function GameEndModal({ players, onBackToPublicLobby }: GameEndModalProps) {
   const sorted = [...players].sort((a, b) => b.score - a.score);
   const winner = sorted[0];
 
@@ -45,12 +44,12 @@ export function GameEndModal({ players, onPlayAgain, onBackToHome }: GameEndModa
       <div className="bg-white dark:bg-stone-900 border-2 border-stone-800 dark:border-stone-500 rounded-2xl shadow-[6px_6px_0px_#1C1917] dark:shadow-[6px_6px_0px_rgba(255,255,255,0.1)] w-full max-w-md p-6 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <p className="text-xs text-stone-400 dark:text-stone-500 uppercase tracking-widest">Game Over!</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 uppercase tracking-widest">Game Over</p>
           <h2
             className="text-4xl text-stone-900 dark:text-stone-100"
             style={{ fontFamily: "'Fredoka One', sans-serif" }}
           >
-            Final Results
+            Game Over
           </h2>
         </div>
 
@@ -78,7 +77,7 @@ export function GameEndModal({ players, onPlayAgain, onBackToHome }: GameEndModa
         <div className="space-y-2">
           <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-widest">Leaderboard</p>
           <div className="space-y-1.5">
-            {sorted.map((player, index) => (
+            {sorted.length > 0 ? sorted.map((player, index) => (
               <div
                 key={player.id}
                 className={cn(
@@ -103,31 +102,20 @@ export function GameEndModal({ players, onPlayAgain, onBackToHome }: GameEndModa
                 </span>
                 <Trophy className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
               </div>
-            ))}
+            )) : (
+              <p className="text-center py-4 text-sm text-stone-400 font-medium">No final scores available.</p>
+            )}
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex">
           <button
-            onClick={onBackToHome}
-            className="flex items-center justify-center gap-2 flex-1 py-2.5 rounded-xl border-2 border-stone-300 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors text-sm text-stone-700 dark:text-stone-300"
+            onClick={onBackToPublicLobby}
+            className="flex items-center justify-center gap-2 flex-1 py-2.5 rounded-xl border-2 border-stone-800 dark:border-stone-400 bg-amber-400 hover:bg-amber-500 text-stone-900 transition-colors text-sm font-bold shadow-[3px_3px_0px_#1C1917]"
           >
             <Home className="w-4 h-4" />
-            Home
-          </button>
-          <button
-            onClick={onPlayAgain}
-            className={cn(
-              'flex items-center justify-center gap-2 flex-1 py-2.5 rounded-xl border-2 border-stone-800 dark:border-stone-400',
-              'bg-violet-500 hover:bg-violet-600 text-white',
-              'shadow-[3px_3px_0px_#1C1917] dark:shadow-[3px_3px_0px_rgba(255,255,255,0.1)]',
-              'active:translate-y-[1px] active:shadow-[1px_1px_0px_#1C1917]',
-              'transition-all text-sm font-bold',
-            )}
-          >
-            <RefreshCw className="w-4 h-4" />
-            Play Again
+            Back to Public Lobby
           </button>
         </div>
       </div>

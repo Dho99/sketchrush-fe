@@ -60,7 +60,7 @@ export function GameStatusBar({ round, players, room, connectionStatus, isDrawer
 
       {/* Right: Timer & Settings */}
       <div className="flex items-center gap-3">
-        <GameTimer seconds={round.timeLeft} maxSeconds={60} />
+        <GameTimer timeLeft={round.timeLeft} totalTime={round.duration || 60} />
         
         <div className="hidden sm:flex items-center gap-2">
           <RoomCodeBadge code={room.code} />

@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatTime(seconds: number): string {
+export function formatTime(value: unknown): string {
+  const seconds = typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
@@ -15,8 +16,13 @@ export function generateId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export function getInitial(name: string): string {
-  return name.charAt(0).toUpperCase();
+export function getInitial(name?: string | null): string {
+  const safeName = typeof name === 'string' && name.trim().length > 0 ? name.trim() : '?';
+  return safeName.charAt(0).toUpperCase();
+}
+
+export function safeText(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
 }
 
 export function copyToClipboard(text: string): Promise<void> {

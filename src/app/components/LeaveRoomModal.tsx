@@ -36,7 +36,7 @@ export function LeaveRoomModal({
           <AlertDialogDescription className="text-stone-600 dark:text-stone-400">
             {isHost
               ? 'You are the host. Leaving will permanently close this room and remove all players. This action cannot be undone.'
-              : 'Are you sure you want to leave? You will be removed from the room and your current score will be lost.'}
+              : 'You will leave this room and return to Public Lobby.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
