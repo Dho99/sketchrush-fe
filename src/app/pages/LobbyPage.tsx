@@ -52,15 +52,21 @@ export function LobbyPage() {
     const isCustomWordPack =
         (settings.selectedWordPackId || settings.wordPack) === "custom" ||
         settings.wordPackName?.toLowerCase() === "custom";
-    const customWordsReady = !isCustomWordPack || (settings.customWords?.length || 0) > 0;
+    const customWordsReady =
+        !isCustomWordPack || (settings.customWords?.length || 0) > 0;
     const displayCode = roomCode ?? room?.code ?? "------";
 
-    const { showConfirmModal, requestExit, confirmExit, cancelExit, isProcessingExit } =
-        useRoomExitGuard({
-            roomCode: displayCode,
-            isHost,
-            isInRoom: !!room,
-        });
+    const {
+        showConfirmModal,
+        requestExit,
+        confirmExit,
+        cancelExit,
+        isProcessingExit,
+    } = useRoomExitGuard({
+        roomCode: displayCode,
+        isHost,
+        isInRoom: !!room,
+    });
 
     const handleToggleReady = () => {
         const nextReady = !isReady;
@@ -236,18 +242,24 @@ export function LobbyPage() {
                         {isHost && (
                             <button
                                 onClick={handleStartGame}
-                                disabled={!canStart || !customWordsReady || isStartingGame}
+                                disabled={
+                                    !canStart ||
+                                    !customWordsReady ||
+                                    isStartingGame
+                                }
                                 title={
                                     !customWordsReady
                                         ? "Add at least one custom word."
                                         : !canStart
-                                        ? `Need all ${players.length} players to be ready`
-                                        : "Start the game!"
+                                          ? `Need all ${players.length} players to be ready`
+                                          : "Start the game!"
                                 }
                                 className={cn(
                                     "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 font-bold transition-all",
                                     "border-stone-800 dark:border-stone-400",
-                                    canStart && customWordsReady && !isStartingGame
+                                    canStart &&
+                                        customWordsReady &&
+                                        !isStartingGame
                                         ? "bg-amber-400 hover:bg-amber-500 text-stone-900 shadow-[3px_3px_0px_#1C1917] dark:shadow-[3px_3px_0px_rgba(255,255,255,0.1)] active:translate-y-[1px] active:shadow-[1px_1px_0px_#1C1917]"
                                         : "bg-stone-200 dark:bg-stone-800 text-stone-400 dark:text-stone-600 cursor-not-allowed border-stone-300 dark:border-stone-700",
                                 )}
