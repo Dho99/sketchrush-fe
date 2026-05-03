@@ -63,7 +63,7 @@ export function StatsPage() {
           User Statistics
         </h1>
         <p className="text-stone-500 dark:text-stone-400">
-          Your performance across all games played on Hanep.io.
+          Your performance across all games played on SketchRush.
         </p>
       </div>
 

@@ -23,7 +23,7 @@ export function Navbar() {
         <Link
           to="/"
           className="flex items-center gap-2 group"
-          aria-label="Hanep.io – go home"
+          aria-label="SketchRush – go home"
         >
           <div
             className={cn(
@@ -41,7 +41,7 @@ export function Navbar() {
             className="text-xl text-stone-900 dark:text-stone-100"
             style={{ fontFamily: "'Fredoka One', sans-serif" }}
           >
-            Hanep.io
+            SketchRush
           </span>
         </Link>
 
@@ -111,3 +111,4 @@ export function Navbar() {
     </nav>
   );
 }
+

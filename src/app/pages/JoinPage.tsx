@@ -223,7 +223,7 @@ export function JoinPage() {
                                             e.target.value.toUpperCase(),
                                         )
                                     }
-                                    placeholder="e.g. HANEP7"
+                                    placeholder="e.g. RUSH7"
                                     maxLength={10}
                                     className={cn(
                                         "w-full px-3 py-2.5 rounded-xl border-2 bg-stone-50 dark:bg-stone-800",

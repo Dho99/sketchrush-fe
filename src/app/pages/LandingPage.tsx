@@ -168,7 +168,7 @@ export function LandingPage() {
               className="text-6xl md:text-8xl text-stone-900 dark:text-stone-100 leading-none"
               style={{ fontFamily: "'Fredoka One', sans-serif" }}
             >
-              Hanep.io
+              SketchRush
             </h1>
             <DoodleArrow className="absolute -right-10 -bottom-4 text-amber-400 hidden md:block" />
           </div>
@@ -355,7 +355,7 @@ export function LandingPage() {
           <div className="flex items-center gap-2">
             <span className="text-xl" aria-hidden>✏️</span>
             <span className="font-bold text-stone-700 dark:text-stone-300" style={{ fontFamily: "'Fredoka One', sans-serif" }}>
-              Hanep.io
+              SketchRush
             </span>
           </div>
           <p className="text-xs text-stone-400 dark:text-stone-500">

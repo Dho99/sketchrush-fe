@@ -59,7 +59,7 @@ export interface StrokePayload {
 export const createRoom = async (payload: CreateRoomPayload): Promise<{ roomCode: string }> => {
   console.log('[Socket Placeholder] room:create', payload);
   await new Promise(resolve => setTimeout(resolve, 800));
-  const code = 'HANEP' + Math.floor(Math.random() * 90 + 10);
+  const code = 'RUSH' + Math.floor(Math.random() * 90 + 10);
   return { roomCode: code };
 };
 

@@ -21,7 +21,7 @@ export const MOCK_CURRENT_USER: Player = {
 };
 
 export const MOCK_ROOM: Room = {
-  code: 'HANEP7',
+  code: 'RUSH7',
   hostId: 'p1',
 };
 

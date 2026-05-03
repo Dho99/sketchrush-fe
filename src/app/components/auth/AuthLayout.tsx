@@ -44,7 +44,7 @@ export function AuthLayout({
                             className="text-3xl text-stone-900 dark:text-stone-100"
                             style={{ fontFamily: "'Fredoka One', sans-serif" }}
                         >
-                            Hanep.io
+                            SketchRush
                         </span>
                     </Link>
 
