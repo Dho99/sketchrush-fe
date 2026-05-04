@@ -47,7 +47,19 @@ export function JoinPage() {
 
                 // If we are currently joining or creating, handle redirect
                 if (isLoading) {
-                    if (data.player) {
+                    if (data.players) {
+                        const mappedPlayers = data.players.map((player: any) => ({
+                            id: player.id,
+                            name: player.nickname,
+                            avatarColor: player.avatar || "#F59E0B",
+                            score: player.score,
+                            status: player.status.toLowerCase(),
+                            isHost: player.isHost,
+                            isReady: player.status === "READY",
+                            role: player.role.toLowerCase(),
+                        }));
+                        setPlayers(mappedPlayers);
+                    } else if (data.player) {
                         const joinedPlayer = {
                             id: data.player.id,
                             name: data.player.nickname,
@@ -60,6 +72,19 @@ export function JoinPage() {
                         };
                         setCurrentUser(joinedPlayer);
                         setPlayers([joinedPlayer]);
+                    }
+
+                    if (data.player) {
+                        setCurrentUser({
+                            id: data.player.id,
+                            name: data.player.nickname,
+                            avatarColor: data.player.avatar || "#F59E0B",
+                            score: data.player.score,
+                            status: data.player.status.toLowerCase(),
+                            isHost: data.player.isHost,
+                            isReady: data.player.status === "READY",
+                            role: data.player.role.toLowerCase(),
+                        });
                     }
 
                     setRoom({ code, hostId: data.hostPlayerId || data.player?.id || "unknown" });

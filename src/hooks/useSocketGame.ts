@@ -13,7 +13,7 @@ function uniquePlayersById(players: Player[]) {
 function mapSocketPlayer(p: any, existing?: Player): Player {
   const status = (p.status || existing?.status || 'waiting').toLowerCase() as PlayerStatus;
   return {
-    id: p.playerId || p.id,
+    id: p.id || p.playerId,
     name: p.name || p.nickname,
     avatarColor: p.avatar || existing?.avatarColor || '#F59E0B',
     score: typeof p.score === 'number' ? p.score : existing?.score || 0,
@@ -125,7 +125,7 @@ export function useSocketGame(roomCode: string | undefined) {
         setRoom({ code: data.room.code, hostId: data.room.hostPlayerId });
         if (data.room.players) {
             const existingById = new Map(useGameStore.getState().players.map((player) => [player.id, player]));
-            const mapped = data.room.players.map((p: any) => mapSocketPlayer(p, existingById.get(p.id)));
+            const mapped = data.room.players.map((p: any) => mapSocketPlayer(p, existingById.get(p.id || p.playerId)));
             setPlayers(uniquePlayersById(mapped));
         }
       }
@@ -387,14 +387,14 @@ export function useSocketGame(roomCode: string | undefined) {
     socket.on('leaderboard:update', (data: { players?: any[], leaderboard?: any[] }) => {
         const incoming = data.players || data.leaderboard || [];
         const existingById = new Map(useGameStore.getState().players.map((player) => [player.id, player]));
-        const mapped = incoming.map((p: any) => mapSocketPlayer(p, existingById.get(p.playerId || p.id)));
+        const mapped = incoming.map((p: any) => mapSocketPlayer(p, existingById.get(p.id || p.playerId)));
         setPlayers(uniquePlayersById(mapped));
     });
 
     socket.on('score:update', (data: any) => {
         if (data.leaderboard) {
             const existingById = new Map(useGameStore.getState().players.map((player) => [player.id, player]));
-            const mapped = data.leaderboard.map((p: any) => mapSocketPlayer(p, existingById.get(p.playerId || p.id)));
+            const mapped = data.leaderboard.map((p: any) => mapSocketPlayer(p, existingById.get(p.id || p.playerId)));
             setPlayers(uniquePlayersById(mapped));
         } else if (data.playerId && typeof data.score === 'number') {
             updatePlayerScore(data.playerId, data.score);

@@ -33,6 +33,10 @@ interface PublicRoom {
   createdAt: string;
 }
 
+function activeRoomPlayers(room: PublicRoom) {
+  return room.players.filter((player) => player.role !== 'SPECTATOR');
+}
+
 export function PublicLobbyPage() {
   const navigate = useNavigate();
   const { user: authUser } = useAuthStore();
@@ -84,6 +88,20 @@ export function PublicLobbyPage() {
 
     socketService.on('room:state', (data) => {
       if (data.roomCode === roomCode || data.code === roomCode) {
+        if (data.players) {
+          const mappedPlayers = data.players.map((player: any) => ({
+            id: player.id,
+            name: player.nickname,
+            avatarColor: player.avatar || '#F59E0B',
+            score: player.score,
+            status: player.status.toLowerCase(),
+            isHost: player.isHost,
+            isReady: player.status === 'READY',
+            role: player.role?.toLowerCase() || 'guesser'
+          }));
+          setPlayers(mappedPlayers);
+        }
+
         if (data.player) {
           const joinedPlayer = {
             id: data.player.id,
@@ -96,7 +114,6 @@ export function PublicLobbyPage() {
             role: data.player.role?.toLowerCase() || 'guesser'
           };
           setCurrentUser(joinedPlayer);
-          setPlayers([joinedPlayer]);
         }
         setRoom({ code: roomCode, hostId: data.hostPlayerId || data.player?.id || 'unknown' });
         toast.success(`Joined room ${roomCode}! 🎮`);
@@ -177,8 +194,12 @@ export function PublicLobbyPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRooms.map((room) => (
-            <Card 
+          {filteredRooms.map((room) => {
+            const activePlayers = activeRoomPlayers(room);
+            const isFull = activePlayers.length >= room.maxPlayers;
+
+            return (
+            <Card
               key={room.id}
               className="border-2 border-stone-800 dark:border-stone-500 shadow-[4px_4px_0px_#1C1917] dark:shadow-[4px_4px_0px_rgba(255,255,255,0.1)] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#1C1917] transition-all overflow-hidden group"
             >
@@ -204,11 +225,11 @@ export function PublicLobbyPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300 font-bold">
                     <Users className="w-4 h-4 text-amber-500" />
-                    <span>{room.players.length} / {room.maxPlayers} Players</span>
+                    <span>{activePlayers.length} / {room.maxPlayers} Players</span>
                   </div>
                   
                   <div className="flex -space-x-2">
-                    {room.players.slice(0, 3).map((p, i) => (
+                    {activePlayers.slice(0, 3).map((p, i) => (
                       <div 
                         key={i} 
                         className="w-7 h-7 rounded-full border-2 border-white dark:border-stone-900 flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
@@ -217,9 +238,9 @@ export function PublicLobbyPage() {
                         {p.nickname[0].toUpperCase()}
                       </div>
                     ))}
-                    {room.players.length > 3 && (
+                    {activePlayers.length > 3 && (
                       <div className="w-7 h-7 rounded-full border-2 border-white dark:border-stone-900 bg-stone-200 dark:bg-stone-700 flex items-center justify-center text-[10px] font-bold text-stone-500">
-                        +{room.players.length - 3}
+                        +{activePlayers.length - 3}
                       </div>
                     )}
                   </div>
@@ -228,15 +249,15 @@ export function PublicLobbyPage() {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => handleJoinRoom(room.code)}
-                    disabled={room.players.length >= room.maxPlayers}
+                    disabled={isFull}
                     className={cn(
                       "flex-1 py-3 rounded-xl border-2 border-stone-800 dark:border-stone-400 font-bold transition-all flex items-center justify-center gap-2",
-                      room.players.length >= room.maxPlayers
+                      isFull
                         ? "bg-stone-100 text-stone-400 cursor-not-allowed border-stone-300 dark:bg-stone-800 dark:border-stone-700"
                         : "bg-amber-400 text-stone-900 hover:bg-amber-500 shadow-[3px_3px_0px_#1C1917] active:translate-y-[1px] active:shadow-[1px_1px_0px_#1C1917]"
                     )}
                   >
-                    {room.players.length >= room.maxPlayers ? "Room Full" : "Join Room"}
+                    {isFull ? "Room Full" : "Join Room"}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                   
@@ -250,7 +271,8 @@ export function PublicLobbyPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

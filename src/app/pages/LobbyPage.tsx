@@ -41,14 +41,17 @@ export function LobbyPage() {
     } = useGameStore();
 
     const isHost = currentUser?.isHost ?? false;
+    const isSpectator = currentUser?.role === "spectator";
+    const activePlayers = players.filter((p) => p.role !== "spectator");
+    const spectatorCount = players.length - activePlayers.length;
     const isReady =
-        players.find((p) => p.id === currentUser?.id)?.isReady ?? false;
-    const readyCount = players.filter((p) => p.isReady).length;
-    const notReadyCount = Math.max(0, players.length - readyCount);
+        activePlayers.find((p) => p.id === currentUser?.id)?.isReady ?? false;
+    const readyCount = activePlayers.filter((p) => p.isReady).length;
+    const notReadyCount = Math.max(0, activePlayers.length - readyCount);
     const canStart =
         isHost &&
         isReady &&
-        players.length >= MIN_PLAYERS &&
+        activePlayers.length >= MIN_PLAYERS &&
         readyCount >= MIN_PLAYERS;
     const isCustomWordPack =
         (settings.selectedWordPackId || settings.wordPack) === "custom" ||
@@ -70,6 +73,7 @@ export function LobbyPage() {
     });
 
     const handleToggleReady = () => {
+        if (isSpectator) return;
         const nextReady = !isReady;
         toggleReady(nextReady);
     };
@@ -146,14 +150,17 @@ export function LobbyPage() {
                                     fontFamily: "'Fredoka One', sans-serif",
                                 }}
                             >
-                                Players ({players.length})
+                                Players ({activePlayers.length})
                             </h2>
                             <span className="text-xs text-stone-400 dark:text-stone-500">
-                                {readyCount}/{players.length} ready
+                                {readyCount}/{activePlayers.length} ready
+                                {spectatorCount > 0
+                                    ? ` · ${spectatorCount} spectating`
+                                    : ""}
                             </span>
                         </div>
 
-                        {players.length < MIN_PLAYERS ? (
+                        {players.length === 0 ? (
                             <EmptyState
                                 icon="👥"
                                 title="Waiting for players..."
@@ -193,10 +200,20 @@ export function LobbyPage() {
                                                         (You)
                                                     </span>
                                                 )}
+                                                {player.role ===
+                                                    "spectator" && (
+                                                    <span className="text-[10px] font-black uppercase text-sky-600 dark:text-sky-300 bg-sky-100 dark:bg-sky-900/30 border border-sky-200 dark:border-sky-800 rounded px-1.5 py-0.5 shrink-0">
+                                                        Spectator
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                             <div className="shrink-0">
-                                            {player.isReady ? (
+                                            {player.role === "spectator" ? (
+                                                <div className="flex items-center gap-1.5 text-sky-600 dark:text-sky-300 text-xs font-bold">
+                                                    Watching
+                                                </div>
+                                            ) : player.isReady ? (
                                                 <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
                                                     <CheckCircle2
                                                         className="w-5 h-5"
@@ -220,7 +237,7 @@ export function LobbyPage() {
                         )}
 
                         {/* Min players warning */}
-                        {players.length > 0 && players.length < MIN_PLAYERS && (
+                        {activePlayers.length > 0 && activePlayers.length < MIN_PLAYERS && (
                             <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 text-center">
                                 ⚠️ Minimum {MIN_PLAYERS} players required to
                                 start
@@ -233,14 +250,19 @@ export function LobbyPage() {
                         {/* Ready toggle */}
                         <button
                             onClick={handleToggleReady}
+                            disabled={isSpectator}
                             className={cn(
                                 "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 font-bold transition-all",
-                                isReady
+                                isSpectator
+                                    ? "border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500 cursor-not-allowed"
+                                    : isReady
                                     ? "border-stone-800 dark:border-stone-400 bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300 shadow-[2px_2px_0px_#1C1917]"
                                     : "border-stone-800 dark:border-stone-400 bg-emerald-400 hover:bg-emerald-500 text-stone-900 shadow-[3px_3px_0px_#1C1917] dark:shadow-[3px_3px_0px_rgba(255,255,255,0.1)] active:translate-y-[1px] active:shadow-[1px_1px_0px_#1C1917]",
                             )}
                         >
-                            {isReady ? (
+                            {isSpectator ? (
+                                <>Spectating</>
+                            ) : isReady ? (
                                 <>
                                     <CheckCircle2 className="w-4 h-4" />
                                     Cancel Ready
@@ -308,7 +330,7 @@ export function LobbyPage() {
 
                     {isHost && !canStart && !isStartingGame && (
                         <p className="text-xs text-center text-amber-600 dark:text-amber-400 font-medium animate-pulse">
-                            {players.length < MIN_PLAYERS
+                            {activePlayers.length < MIN_PLAYERS
                                 ? `Waiting for more players (min ${MIN_PLAYERS})...`
                                 : !isReady
                                   ? "Ready up before starting the game."

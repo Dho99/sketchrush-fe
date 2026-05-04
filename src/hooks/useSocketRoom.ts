@@ -166,7 +166,7 @@ export function useSocketRoom(roomCode: string | undefined) {
   const toggleReady = (isReady: boolean) => {
     if (!roomCode) return;
     const currentUser = useGameStore.getState().currentUser;
-    if (currentUser) {
+    if (currentUser && currentUser.role !== 'spectator') {
         socketService.emit(isReady ? 'player:ready' : 'player:unready', { 
             roomCode,
             playerId: currentUser.id 

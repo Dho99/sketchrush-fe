@@ -285,7 +285,9 @@ export function GamePage() {
                             isDrawer={isDrawer}
                             onSendMessage={handleSendMessage}
                             placeholder={
-                                isSpectator ? "Spectator Chat..." : undefined
+                                isSpectator
+                                    ? "You are spectating. Guessing is disabled."
+                                    : undefined
                             }
                         />
                     </div>
@@ -375,7 +377,7 @@ export function GamePage() {
                                 onSendMessage={handleSendMessage}
                                 placeholder={
                                     isSpectator
-                                        ? "Spectator Chat..."
+                                        ? "You are spectating. Guessing is disabled."
                                         : undefined
                                 }
                             />

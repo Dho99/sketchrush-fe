@@ -139,8 +139,8 @@ export function ChatPanel({ messages, isDrawer, onSendMessage, placeholder }: Ch
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={placeholder ?? (isDrawer ? 'Chat with players...' : 'Type your guess here!')}
-          aria-label={isDrawer ? 'Chat message' : 'Guess the word'}
+          placeholder={placeholder ?? (isSpectator ? 'You are spectating. Guessing is disabled.' : isDrawer ? 'Chat with players...' : 'Type your guess here!')}
+          aria-label={isSpectator ? 'Spectator guessing disabled' : isDrawer ? 'Chat message' : 'Guess the word'}
           disabled={isSpectator}
           className={cn(
             'flex-1 px-4 py-2.5 rounded-xl border-2 border-stone-200 dark:border-stone-800',
