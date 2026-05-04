@@ -48,7 +48,7 @@ export function JoinPage() {
                 // If we are currently joining or creating, handle redirect
                 if (isLoading) {
                     if (data.player) {
-                        setCurrentUser({
+                        const joinedPlayer = {
                             id: data.player.id,
                             name: data.player.nickname,
                             avatarColor: data.player.avatar || "#F59E0B",
@@ -57,10 +57,12 @@ export function JoinPage() {
                             isHost: data.player.isHost,
                             isReady: data.player.status === "READY",
                             role: data.player.role.toLowerCase(),
-                        });
+                        };
+                        setCurrentUser(joinedPlayer);
+                        setPlayers([joinedPlayer]);
                     }
 
-                    setRoom({ code, hostId: data.hostPlayerId || "unknown" });
+                    setRoom({ code, hostId: data.hostPlayerId || data.player?.id || "unknown" });
                     toast.success(`Joined room ${code}! 🎉`);
                     navigate(`/lobby/${code}`);
                     setIsLoading(false);
@@ -79,7 +81,7 @@ export function JoinPage() {
             socketService.off("room:state");
             socketService.off("room:error");
         };
-    }, [isLoading, navigate, setCurrentUser, setRoom]);
+    }, [isLoading, navigate, setCurrentUser, setPlayers, setRoom]);
 
     const handleCreateRoom = (e: React.FormEvent) => {
         e.preventDefault();

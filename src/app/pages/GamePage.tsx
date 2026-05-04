@@ -149,16 +149,13 @@ export function GamePage() {
         setShowEndGameConfirm(false);
     };
 
-    const handleBackToPublicLobby = () => {
-        setIsLeavingGame(true);
+    const handleBackToLobby = () => {
         setShowGameEnd(false);
         setShowReplay(false);
-        useGameStore.getState().resetGame();
-        socketService.emit("room:leave", {
-            roomCode,
-            reason: "BACK_TO_PUBLIC_LOBBY",
-        });
-        navigate("/public-lobby", { replace: true });
+        useGameStore.getState().setRound(null);
+        useGameStore.getState().setRoundResult(null);
+        useGameStore.getState().setGameStatus("lobby");
+        navigate(`/lobby/${roomCode}`, { replace: true });
     };
 
     const handleSendEmote = (emote: string) => {
@@ -423,7 +420,7 @@ export function GamePage() {
             {showGameEnd && (
                 <GameEndModal
                     players={players}
-                    onBackToPublicLobby={handleBackToPublicLobby}
+                    onBackToLobby={handleBackToLobby}
                 />
             )}
 

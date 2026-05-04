@@ -130,8 +130,9 @@ export function useSocketRoom(roomCode: string | undefined) {
             }));
             setPlayers(mappedPlayers);
         }
-        setGameStatus('game-end');
-        useGameStore.getState().setShowGameEnd(true);
+        setGameStatus('lobby');
+        useGameStore.getState().setShowGameEnd(false);
+        socketService.emit('room:state', { roomCode });
     });
 
     socketService.on('room:error', (error: any) => {

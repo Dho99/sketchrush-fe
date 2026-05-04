@@ -7,10 +7,10 @@ import { cn } from '../../lib/utils';
 
 interface GameEndModalProps {
   players: Player[];
-  onBackToPublicLobby: () => void;
+  onBackToLobby: () => void;
 }
 
-export function GameEndModal({ players, onBackToPublicLobby }: GameEndModalProps) {
+export function GameEndModal({ players, onBackToLobby }: GameEndModalProps) {
   const sorted = [...players].sort((a, b) => b.score - a.score);
   const winner = sorted[0];
 
@@ -111,11 +111,11 @@ export function GameEndModal({ players, onBackToPublicLobby }: GameEndModalProps
         {/* Actions */}
         <div className="flex">
           <button
-            onClick={onBackToPublicLobby}
+            onClick={onBackToLobby}
             className="flex items-center justify-center gap-2 flex-1 py-2.5 rounded-xl border-2 border-stone-800 dark:border-stone-400 bg-amber-400 hover:bg-amber-500 text-stone-900 transition-colors text-sm font-bold shadow-[3px_3px_0px_#1C1917]"
           >
             <Home className="w-4 h-4" />
-            Back to Public Lobby
+            Back to Room Lobby
           </button>
         </div>
       </div>

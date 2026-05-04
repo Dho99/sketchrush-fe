@@ -11,14 +11,15 @@ function uniquePlayersById(players: Player[]) {
 }
 
 function mapSocketPlayer(p: any, existing?: Player): Player {
+  const status = (p.status || existing?.status || 'waiting').toLowerCase() as PlayerStatus;
   return {
     id: p.playerId || p.id,
     name: p.name || p.nickname,
     avatarColor: p.avatar || existing?.avatarColor || '#F59E0B',
     score: typeof p.score === 'number' ? p.score : existing?.score || 0,
-    status: (p.status || existing?.status || 'waiting').toLowerCase() as PlayerStatus,
+    status,
     isHost: p.isHost ?? existing?.isHost ?? false,
-    isReady: p.status === 'READY' || existing?.isReady || false,
+    isReady: status === 'ready',
     role: (p.role || existing?.role || 'guesser').toLowerCase() as PlayerRole,
   };
 }
@@ -87,8 +88,8 @@ export function useSocketGame(roomCode: string | undefined) {
         const state = useGameStore.getState();
         if (state.isLeavingGame) return;
         if (!state.round && state.gameStatus !== 'playing') {
-            toast.error('Game session is no longer active. Returning to lobby...');
-            navigate('/public-lobby', { replace: true });
+            toast.error('Game session is no longer active. Returning to room lobby...');
+            navigate(`/lobby/${roomCode}`, { replace: true });
         }
     }, 5000);
 
@@ -150,8 +151,7 @@ export function useSocketGame(roomCode: string | undefined) {
             nextDrawerName: data.runtime.currentRound.nextDrawerName,
           });
       } else if (data.runtime?.status === 'WAITING' || data.status === 'WAITING') {
-          // If room exists but game is waiting, go back to public lobby
-          navigate('/public-lobby', { replace: true });
+          navigate(`/lobby/${roomCode}`, { replace: true });
       }
     });
 
@@ -162,15 +162,17 @@ export function useSocketGame(roomCode: string | undefined) {
             const mapped = data.leaderboard.map((p: any) => mapSocketPlayer(p));
             setPlayers(uniquePlayersById(mapped));
         }
-        setGameStatus('game-end');
+        setGameStatus('lobby');
         setIsSelectingWord(false);
         setIsWordSelectionOpen(false);
         setWordOptions(null, []);
         setTimer(0);
         setShowReplay(false);
         setRoundResult(null);
+        setRound(null);
         setShowRoundResult(false);
-        setShowGameEnd(true);
+        setShowGameEnd(false);
+        navigate(data.redirectTo || `/lobby/${roomCode}`, { replace: true });
     });
 
     socket.on('room:deleted', (data: { reason: string }) => {
@@ -290,7 +292,7 @@ export function useSocketGame(roomCode: string | undefined) {
     });
 
     socket.on('game:end', () => {
-      setShowGameEnd(true);
+      setShowGameEnd(false);
     });
 
     socket.on('room:left', (data: { roomCode: string, redirectTo: string, message: string }) => {

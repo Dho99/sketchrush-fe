@@ -167,7 +167,9 @@ export const useGameStore = create<GameStore>((set) => ({
     updatePlayerStatus: (playerId, status) =>
         set((state) => ({
             players: state.players.map((p) =>
-                p.id === playerId ? { ...p, status } : p,
+                p.id === playerId
+                    ? { ...p, status, isReady: status === "ready" }
+                    : p,
             ),
         })),
     updatePlayerReady: (playerId, isReady) =>

@@ -36,7 +36,7 @@ interface PublicRoom {
 export function PublicLobbyPage() {
   const navigate = useNavigate();
   const { user: authUser } = useAuthStore();
-  const { setCurrentUser, setRoom, resetGame, setIsLeavingGame, setShowGameEnd, setShowReplay } = useGameStore();
+  const { setCurrentUser, setPlayers, setRoom, resetGame, setIsLeavingGame, setShowGameEnd, setShowReplay } = useGameStore();
 
   const [rooms, setRooms] = useState<PublicRoom[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +85,7 @@ export function PublicLobbyPage() {
     socketService.on('room:state', (data) => {
       if (data.roomCode === roomCode || data.code === roomCode) {
         if (data.player) {
-          setCurrentUser({
+          const joinedPlayer = {
             id: data.player.id,
             name: data.player.nickname,
             avatarColor: data.player.avatar || '#F59E0B',
@@ -94,9 +94,11 @@ export function PublicLobbyPage() {
             isHost: data.player.isHost,
             isReady: data.player.status === 'READY',
             role: data.player.role?.toLowerCase() || 'guesser'
-          });
+          };
+          setCurrentUser(joinedPlayer);
+          setPlayers([joinedPlayer]);
         }
-        setRoom({ code: roomCode, hostId: data.hostPlayerId || 'unknown' });
+        setRoom({ code: roomCode, hostId: data.hostPlayerId || data.player?.id || 'unknown' });
         toast.success(`Joined room ${roomCode}! 🎮`);
         navigate(`/lobby/${roomCode}`);
       }

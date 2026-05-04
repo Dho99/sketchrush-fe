@@ -1,7 +1,7 @@
 // ─── Player & Room ────────────────────────────────────────────────────────────
 
 export type PlayerRole = 'host' | 'drawer' | 'guesser' | 'spectator';
-export type PlayerStatus = 'drawing' | 'guessed' | 'waiting' | 'disconnected';
+export type PlayerStatus = 'drawing' | 'guessed' | 'waiting' | 'ready' | 'playing' | 'disconnected';
 export type GameStatus = 'lobby' | 'playing' | 'round-end' | 'game-end';
 export type DrawingTool = 'pencil' | 'eraser' | 'clear' | 'undo';
 export type MessageType = 'normal' | 'system' | 'correct-guess' | 'close-guess' | 'warning';

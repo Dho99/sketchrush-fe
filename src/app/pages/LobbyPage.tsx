@@ -37,7 +37,6 @@ export function LobbyPage() {
         isStartingGame,
         startGameMessage,
         updateSettings,
-        updatePlayerReady,
         setIsStartingGame,
     } = useGameStore();
 
@@ -45,10 +44,12 @@ export function LobbyPage() {
     const isReady =
         players.find((p) => p.id === currentUser?.id)?.isReady ?? false;
     const readyCount = players.filter((p) => p.isReady).length;
+    const notReadyCount = Math.max(0, players.length - readyCount);
     const canStart =
         isHost &&
+        isReady &&
         players.length >= MIN_PLAYERS &&
-        readyCount === players.length;
+        readyCount >= MIN_PLAYERS;
     const isCustomWordPack =
         (settings.selectedWordPackId || settings.wordPack) === "custom" ||
         settings.wordPackName?.toLowerCase() === "custom";
@@ -75,6 +76,14 @@ export function LobbyPage() {
 
     const handleStartGame = () => {
         if (!canStart || isStartingGame) return;
+        if (!isReady) {
+            toast.error("You need to be ready before starting the game.");
+            return;
+        }
+        if (readyCount < MIN_PLAYERS) {
+            toast.error(`Need at least ${MIN_PLAYERS} ready players to start.`);
+            return;
+        }
         if (!customWordsReady) {
             toast.error("Add at least one custom word.");
             return;
@@ -186,17 +195,23 @@ export function LobbyPage() {
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="shrink-0">
+                                            <div className="shrink-0">
                                             {player.isReady ? (
-                                                <CheckCircle2
-                                                    className="w-5 h-5 text-emerald-500"
-                                                    aria-label="Ready"
-                                                />
+                                                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                                                    <CheckCircle2
+                                                        className="w-5 h-5"
+                                                        aria-label="Ready"
+                                                    />
+                                                    Ready
+                                                </div>
                                             ) : (
-                                                <Circle
-                                                    className="w-5 h-5 text-stone-300 dark:text-stone-600"
-                                                    aria-label="Not ready"
-                                                />
+                                                <div className="flex items-center gap-1.5 text-stone-400 dark:text-stone-500 text-xs font-bold">
+                                                    <Circle
+                                                        className="w-5 h-5"
+                                                        aria-label="Not ready"
+                                                    />
+                                                    Not Ready
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -250,8 +265,10 @@ export function LobbyPage() {
                                 title={
                                     !customWordsReady
                                         ? "Add at least one custom word."
+                                        : !isReady
+                                          ? "Ready up before starting"
                                         : !canStart
-                                          ? `Need all ${players.length} players to be ready`
+                                          ? `Need at least ${MIN_PLAYERS} ready players`
                                           : "Start the game!"
                                 }
                                 className={cn(
@@ -293,7 +310,9 @@ export function LobbyPage() {
                         <p className="text-xs text-center text-amber-600 dark:text-amber-400 font-medium animate-pulse">
                             {players.length < MIN_PLAYERS
                                 ? `Waiting for more players (min ${MIN_PLAYERS})...`
-                                : "Wait for all players to be ready!"}
+                                : !isReady
+                                  ? "Ready up before starting the game."
+                                : `Need ${Math.max(0, MIN_PLAYERS - readyCount)} more ready player${MIN_PLAYERS - readyCount === 1 ? "" : "s"}. ${notReadyCount} not ready.`}
                         </p>
                     )}
 
