@@ -6,3 +6,18 @@
   [32m[1mVITE[22m v6.3.5[39m  [2mready in [0m[1m822[22m[2m[0m ms[22m
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
+[2m23.02.51[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/components/Navbar.tsx, /src/styles/index.css[22m
+[2m23.03.09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/App.tsx, /src/styles/index.css[22m
+[2m23.03.27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/components/Navbar.tsx, /src/styles/index.css[22m
+[2m23.03.33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/D:\projects\Tubespweb\frontend\src\app\components\GameStatusBar.tsx, /src/styles/index.css[22m
+[2m23.04.18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/pages/GamePage.tsx[22m
+[2m23.04.27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/pages/GamePage.tsx[22m
+[2m23.04.38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/pages/LobbyPage.tsx[22m
+[2m23.04.49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/pages/LobbyPage.tsx[22m
+[2m23.04.56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/pages/GamePage.tsx[22m
+[2m23.05.02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/D:\projects\Tubespweb\frontend\src\app\components\GameStatusBar.tsx, /src/styles/index.css[22m
+[2m23.25.00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/pages/LoginPage.tsx, /src/styles/index.css[22m
+[2m23.25.05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/pages/LoginPage.tsx, /src/styles/index.css[22m
+[2m23.27.13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/App.tsx, /@fs/D:\projects\Tubespweb\frontend\src\app\components\AudioControls.tsx, /src/app/pages/GamePage.tsx, /src/app/pages/LobbyPage.tsx[22m
+[2m23.27.18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/App.tsx, /@fs/D:\projects\Tubespweb\frontend\src\app\components\AudioControls.tsx, /src/app/pages/GamePage.tsx, /src/app/pages/LobbyPage.tsx[22m
+[2m23.27.23[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/pages/LoginPage.tsx, /src/styles/index.css[22m

@@ -1,12 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { socketService } from '../lib/socket';
+import { audioManager } from '../lib/audio';
 import { useGameStore } from '../store/game-store';
+import { useAudioStore } from '../store/audio-store';
 import { toast } from 'sonner';
 import type { Player } from '../lib/types';
 
 export function useSocketRoom(roomCode: string | undefined) {
   const navigate = useNavigate();
+  const previousPlayerCountRef = useRef(0);
   const { 
     setPlayers, 
     setRoom, 
@@ -44,6 +47,13 @@ export function useSocketRoom(roomCode: string | undefined) {
             role: p.role?.toLowerCase() || 'guesser'
           }));
           setPlayers(mappedPlayers);
+          if (
+            previousPlayerCountRef.current > 0 &&
+            mappedPlayers.length > previousPlayerCountRef.current
+          ) {
+            audioManager.playPlayerJoin();
+          }
+          previousPlayerCountRef.current = mappedPlayers.length;
         }
 
         if (data.settings) {
@@ -71,6 +81,13 @@ export function useSocketRoom(roomCode: string | undefined) {
         role: p.role?.toLowerCase() || 'guesser'
       }));
       setPlayers(mappedPlayers);
+      if (
+        previousPlayerCountRef.current > 0 &&
+        mappedPlayers.length > previousPlayerCountRef.current
+      ) {
+        audioManager.playPlayerJoin();
+      }
+      previousPlayerCountRef.current = mappedPlayers.length;
     });
 
     socketService.on('player:status', (data: { playerId: string, status: string }) => {
@@ -101,24 +118,28 @@ export function useSocketRoom(roomCode: string | undefined) {
     });
 
     socketService.on('round:start', (data: any) => {
+      audioManager.playRoundStart();
       useGameStore.getState().setIsStartingGame(false);
       navigate(`/game/${roomCode}`);
     });
 
     socketService.on('room:deleted', (data: { reason: string }) => {
         toast.error(`Room closed: ${data.reason}`);
+        useAudioStore.getState().stopMusic();
         useGameStore.getState().resetGame();
         navigate('/public-lobby');
     });
 
     socketService.on('room:left', (data: { redirectTo: string, message: string }) => {
         toast.info(data.message || 'You left the room.');
+        useAudioStore.getState().stopMusic();
         useGameStore.getState().resetGame();
         navigate(data.redirectTo || '/public-lobby', { replace: true });
     });
 
     socketService.on('game:ended', (data: { message: string, leaderboard?: any[], redirectTo: string }) => {
         toast.info(data.message || 'Game ended.');
+        audioManager.playGameEnd();
         if (data.leaderboard) {
             const mappedPlayers: Player[] = data.leaderboard.map((p: any) => ({
                 id: p.playerId || p.id,

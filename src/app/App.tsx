@@ -3,10 +3,12 @@ import { ThemeProvider } from 'next-themes';
 import { useEffect } from 'react';
 import { router } from './routes';
 import { useAuthStore } from '../store/auth-store';
+import { useGlobalAudio } from '../hooks/useGlobalAudio';
 
 export default function App() {
   const fetchMe = useAuthStore((state) => state.fetchMe);
   const hasFetchedMe = useAuthStore((state) => state.hasFetchedMe);
+  useGlobalAudio();
 
   useEffect(() => {
     if (!hasFetchedMe) {

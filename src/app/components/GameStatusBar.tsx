@@ -3,6 +3,7 @@ import { GameTimer } from './GameTimer';
 import { RoomCodeBadge } from './RoomCodeBadge';
 import { ConnectionStatus } from './ConnectionStatus';
 import { ThemeToggle } from './ThemeToggle';
+import { AudioControls } from './AudioControls';
 import { Badge } from './ui/badge';
 import { useGameStore } from '../../store/game-store';
 import type { Player, Room, RoundState, ConnectionStatus as ConnStatus } from '../../lib/types';
@@ -75,6 +76,7 @@ export function GameStatusBar({ round, players, room, connectionStatus, isDrawer
         >
           <HelpCircle className="w-4 h-4 text-stone-500 dark:text-stone-400" />
         </button>
+        <AudioControls />
         <ThemeToggle />
       </div>
     </header>

@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { socketService } from '../lib/socket';
+import { audioManager } from '../lib/audio';
 import { useGameStore } from '../store/game-store';
+import { useAudioStore } from '../store/audio-store';
 import { toast } from 'sonner';
 import { generateId } from '../lib/utils';
 import type { ChatMessage, Stroke, RoundClue, RoundResult, Player, PlayerRole, PlayerStatus } from '../lib/types';
@@ -162,6 +164,7 @@ export function useSocketGame(roomCode: string | undefined) {
 
     socket.on('game:ended', (data: { roomCode: string, message: string, leaderboard?: any[], redirectTo: string }) => {
         if (useGameStore.getState().isLeavingGame) return;
+        audioManager.playGameEnd();
         toast.info(data.message || 'Game ended.');
         if (data.leaderboard) {
             const existingById = new Map(useGameStore.getState().players.map((player) => [player.id, player]));
@@ -181,6 +184,7 @@ export function useSocketGame(roomCode: string | undefined) {
 
     socket.on('room:deleted', (data: { reason: string }) => {
         toast.error(`Room closed: ${data.reason}`);
+        useAudioStore.getState().stopMusic();
         resetGame();
         navigate('/public-lobby', { replace: true });
     });
@@ -195,6 +199,7 @@ export function useSocketGame(roomCode: string | undefined) {
 
     socket.on('round:start', (data: any) => {
       if (useGameStore.getState().isLeavingGame) return;
+      audioManager.playRoundStart();
       if (import.meta.env.DEV) {
           console.log("TRACE: frontend:round:start", {
               role: data.role,
@@ -296,6 +301,7 @@ export function useSocketGame(roomCode: string | undefined) {
     });
 
     socket.on('game:end', () => {
+      audioManager.playGameEnd();
       setIsSelectingWord(false);
       setIsWordSelectionOpen(false);
       setWordOptions(null, []);
@@ -304,6 +310,7 @@ export function useSocketGame(roomCode: string | undefined) {
     socket.on('room:left', (data: { roomCode: string, redirectTo: string, message: string }) => {
         if (data.roomCode && data.roomCode !== roomCode) return;
         toast.info(data.message || 'You left the room.');
+        useAudioStore.getState().stopMusic();
         resetGame();
         setIsLeavingGame(false);
         navigate(data.redirectTo || '/public-lobby', { replace: true });
@@ -354,6 +361,7 @@ export function useSocketGame(roomCode: string | undefined) {
     });
 
     socket.on('guess:correct', (data: { playerId: string }) => {
+        audioManager.playCorrect();
         updatePlayerStatus(data.playerId, 'guessed');
         if (data.playerId === useGameStore.getState().currentUser?.id) {
             toast.success('You guessed it! 🎉');
@@ -361,10 +369,12 @@ export function useSocketGame(roomCode: string | undefined) {
     });
 
     socket.on('guess:close', () => {
+        audioManager.playWrong();
         toast('Your guess was close! 👀', { icon: '🔥' });
     });
 
     socket.on('guess:wrong', () => {
+        audioManager.playWrong();
         toast.error('Not quite. Keep guessing!');
     });
 
