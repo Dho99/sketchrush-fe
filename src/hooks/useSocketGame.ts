@@ -159,20 +159,19 @@ export function useSocketGame(roomCode: string | undefined) {
         if (useGameStore.getState().isLeavingGame) return;
         toast.info(data.message || 'Game ended.');
         if (data.leaderboard) {
-            const mapped = data.leaderboard.map((p: any) => mapSocketPlayer(p));
+            const existingById = new Map(useGameStore.getState().players.map((player) => [player.id, player]));
+            const mapped = data.leaderboard.map((p: any) => mapSocketPlayer(p, existingById.get(p.id || p.playerId)));
             setPlayers(uniquePlayersById(mapped));
         }
-        setGameStatus('lobby');
+        setGameStatus('game-end');
         setIsSelectingWord(false);
         setIsWordSelectionOpen(false);
         setWordOptions(null, []);
         setTimer(0);
         setShowReplay(false);
         setRoundResult(null);
-        setRound(null);
         setShowRoundResult(false);
-        setShowGameEnd(false);
-        navigate(data.redirectTo || `/lobby/${roomCode}`, { replace: true });
+        setShowGameEnd(true);
     });
 
     socket.on('room:deleted', (data: { reason: string }) => {
@@ -292,7 +291,9 @@ export function useSocketGame(roomCode: string | undefined) {
     });
 
     socket.on('game:end', () => {
-      setShowGameEnd(false);
+      setIsSelectingWord(false);
+      setIsWordSelectionOpen(false);
+      setWordOptions(null, []);
     });
 
     socket.on('room:left', (data: { roomCode: string, redirectTo: string, message: string }) => {

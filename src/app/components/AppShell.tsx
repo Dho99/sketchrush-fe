@@ -15,7 +15,7 @@ export function AppShell() {
       </main>
       <Toaster
         richColors
-        position="bottom-right"
+        position="top-center"
         toastOptions={{
           style: {
             fontFamily: 'var(--font-body)',

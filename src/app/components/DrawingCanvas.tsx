@@ -76,6 +76,11 @@ export function DrawingCanvas({
     const [tool, setTool] = useState<DrawingTool>("pencil");
     const [color, setColor] = useState("#1C1917");
     const [brushSize, setBrushSize] = useState(6);
+    const [cursorDot, setCursorDot] = useState<{
+        x: number;
+        y: number;
+        size: number;
+    } | null>(null);
 
     const redrawAll = useCallback(() => {
         const canvas = canvasRef.current;
@@ -99,6 +104,22 @@ export function DrawingCanvas({
             y: (clientY - rect.top) * (CANVAS_H / rect.height),
         };
     }, []);
+
+    const updateCursorDot = useCallback(
+        (clientX: number, clientY: number) => {
+            if (!isDrawer) return;
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaledBrushSize = brushSize * (rect.width / CANVAS_W);
+            setCursorDot({
+                x: clientX - rect.left,
+                y: clientY - rect.top,
+                size: Math.max(8, Math.min(42, scaledBrushSize)),
+            });
+        },
+        [brushSize, isDrawer],
+    );
 
     const startDrawing = useCallback(
         (x: number, y: number) => {
@@ -164,30 +185,40 @@ export function DrawingCanvas({
 
     // Mouse events
     const handleMouseDown = (e: React.MouseEvent) => {
+        updateCursorDot(e.clientX, e.clientY);
         const { x, y } = getPoint(e.clientX, e.clientY);
         startDrawing(x, y);
     };
     const handleMouseMove = (e: React.MouseEvent) => {
+        updateCursorDot(e.clientX, e.clientY);
         const { x, y } = getPoint(e.clientX, e.clientY);
         continueDrawing(x, y);
     };
     const handleMouseUp = () => endDrawing();
-    const handleMouseLeave = () => endDrawing();
+    const handleMouseLeave = () => {
+        setCursorDot(null);
+        endDrawing();
+    };
 
     // Touch events
     const handleTouchStart = (e: React.TouchEvent) => {
         e.preventDefault();
         const t = e.touches[0];
+        updateCursorDot(t.clientX, t.clientY);
         const { x, y } = getPoint(t.clientX, t.clientY);
         startDrawing(x, y);
     };
     const handleTouchMove = (e: React.TouchEvent) => {
         e.preventDefault();
         const t = e.touches[0];
+        updateCursorDot(t.clientX, t.clientY);
         const { x, y } = getPoint(t.clientX, t.clientY);
         continueDrawing(x, y);
     };
-    const handleTouchEnd = () => endDrawing();
+    const handleTouchEnd = () => {
+        setCursorDot(null);
+        endDrawing();
+    };
 
     const handleUndo = () => {
         onUndo?.();
@@ -315,7 +346,7 @@ export function DrawingCanvas({
                             "w-full h-full border-2 border-stone-800 dark:border-stone-600 rounded-xl",
                             "shadow-[4px_4px_0_#1C1917] dark:shadow-[4px_4px_0_rgba(255,255,255,0.1)]",
                             "bg-white",
-                            isDrawer ? "cursor-crosshair" : "cursor-default",
+                            isDrawer ? "cursor-none" : "cursor-default",
                         )}
                         onMouseDown={isDrawer ? handleMouseDown : undefined}
                         onMouseMove={isDrawer ? handleMouseMove : undefined}
@@ -330,6 +361,27 @@ export function DrawingCanvas({
                                 : "Drawing canvas – read only, guess the word in chat"
                         }
                     />
+
+                    {isDrawer && cursorDot && (
+                        <div
+                            className={cn(
+                                "absolute rounded-full border-2 pointer-events-none -translate-x-1/2 -translate-y-1/2 z-10",
+                                tool === "eraser"
+                                    ? "border-rose-500 bg-white/35 shadow-[0_0_0_1px_rgba(28,25,23,0.35)]"
+                                    : "border-white shadow-[0_0_0_1px_rgba(28,25,23,0.55)]",
+                            )}
+                            style={{
+                                left: cursorDot.x,
+                                top: cursorDot.y,
+                                width: cursorDot.size,
+                                height: cursorDot.size,
+                                backgroundColor:
+                                    tool === "eraser"
+                                        ? "rgba(255,255,255,0.45)"
+                                        : color,
+                            }}
+                        />
+                    )}
 
                     {/* Overlay hint for viewers */}
                     {!isDrawer && (
