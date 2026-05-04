@@ -22,6 +22,8 @@ export interface Player {
 export interface Room {
   code: string;
   hostId: string;
+  visibility?: 'PUBLIC' | 'PRIVATE';
+  isPrivate?: boolean;
 }
 
 // ─── Game Settings ─────────────────────────────────────────────────────────────
@@ -39,6 +41,7 @@ export interface GameSettings {
   enableAiClue: boolean;
   clueTriggerSeconds: number;
   maxCluesPerRound: number;
+  isPrivate?: boolean;
 }
 
 // ─── Round State ───────────────────────────────────────────────────────────────

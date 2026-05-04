@@ -122,7 +122,12 @@ export function useSocketGame(roomCode: string | undefined) {
 
       if (data.status) setGameStatus(data.status.toLowerCase());
       if (data.room) {
-        setRoom({ code: data.room.code, hostId: data.room.hostPlayerId });
+        setRoom({
+          code: data.room.code,
+          hostId: data.room.hostPlayerId,
+          visibility: data.room.visibility,
+          isPrivate: data.room.isPrivate ?? data.room.visibility === 'PRIVATE',
+        });
         if (data.room.players) {
             const existingById = new Map(useGameStore.getState().players.map((player) => [player.id, player]));
             const mapped = data.room.players.map((p: any) => mapSocketPlayer(p, existingById.get(p.id || p.playerId)));

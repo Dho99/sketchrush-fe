@@ -31,11 +31,11 @@ export function LeaveRoomModal({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-rose-600">
             <AlertTriangle className="w-5 h-5" />
-            {isHost ? 'Delete Room?' : 'Leave Room?'}
+            Leave Room?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-stone-600 dark:text-stone-400">
             {isHost
-              ? 'You are the host. Leaving will permanently close this room and remove all players. This action cannot be undone.'
+              ? 'You are the host. Host will transfer to another player if one is available. Use Delete Room in settings to close the room for everyone.'
               : 'You will leave this room and return to Public Lobby.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -52,7 +52,7 @@ export function LeaveRoomModal({
             onClick={onConfirm}
             className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white border-2 border-rose-700 shadow-[2px_2px_0px_#1C1917]"
           >
-            {isLeaving ? 'Leaving...' : isHost ? 'Delete Room' : 'Leave Room'}
+            {isLeaving ? 'Leaving...' : 'Leave Room'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

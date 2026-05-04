@@ -9,6 +9,8 @@ import {
     Loader2,
     Gamepad2,
     LogOut,
+    Globe2,
+    Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PlayerAvatar } from "../components/PlayerAvatar";
@@ -40,6 +42,11 @@ export function LobbyPage() {
         setIsStartingGame,
     } = useGameStore();
 
+    useEffect(() => {
+        if (!roomCode || currentUser) return;
+        navigate(`/join?code=${roomCode.toUpperCase()}`, { replace: true });
+    }, [currentUser, navigate, roomCode]);
+
     const isHost = currentUser?.isHost ?? false;
     const isSpectator = currentUser?.role === "spectator";
     const activePlayers = players.filter((p) => p.role !== "spectator");
@@ -59,6 +66,7 @@ export function LobbyPage() {
     const customWordsReady =
         !isCustomWordPack || (settings.customWords?.length || 0) > 0;
     const displayCode = roomCode ?? room?.code ?? "------";
+    const isPrivateRoom = room?.isPrivate ?? room?.visibility === "PRIVATE";
 
     const {
         showConfirmModal,
@@ -109,11 +117,18 @@ export function LobbyPage() {
         socketService.emit("room:updateSettings", {
             roomCode: displayCode,
             settings: nextSettings,
+            ...(typeof patch.isPrivate === "boolean"
+                ? {
+                      isPrivate: patch.isPrivate,
+                      visibility: patch.isPrivate ? "PRIVATE" : "PUBLIC",
+                  }
+                : {}),
         });
     };
 
     const handleCopyLink = () => {
-        navigator.clipboard.writeText(window.location.href);
+        const inviteUrl = `${window.location.origin}/join?code=${displayCode}`;
+        navigator.clipboard.writeText(inviteUrl);
         toast.success("Invite link copied!");
     };
 
@@ -125,6 +140,15 @@ export function LobbyPage() {
                     {/* Room code card */}
                     <div className="bg-white dark:bg-stone-900 border-2 border-stone-800 dark:border-stone-500 rounded-2xl p-6 shadow-[4px_4px_0px_#1C1917] dark:shadow-[4px_4px_0px_rgba(255,255,255,0.1)] text-center space-y-4">
                         <RoomCodeBadge code={displayCode} size="lg" />
+
+                        <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border-2 border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs font-bold text-stone-600 dark:text-stone-300">
+                            {isPrivateRoom ? (
+                                <Lock className="w-3.5 h-3.5" />
+                            ) : (
+                                <Globe2 className="w-3.5 h-3.5" />
+                            )}
+                            {isPrivateRoom ? "Private Room" : "Public Room"}
+                        </div>
 
                         <div className="flex flex-col sm:flex-row gap-2 justify-center">
                             <button
@@ -352,6 +376,7 @@ export function LobbyPage() {
                         isHost={isHost}
                         onChange={handleSettingsChange}
                         roomCode={displayCode}
+                        isPrivate={isPrivateRoom}
                     />
                 </div>
             </div>

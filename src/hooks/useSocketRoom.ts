@@ -27,7 +27,9 @@ export function useSocketRoom(roomCode: string | undefined) {
       if (data) {
         setRoom({ 
           code: data.code || data.roomCode, 
-          hostId: data.hostPlayerId || 'unknown' 
+          hostId: data.hostPlayerId || 'unknown',
+          visibility: data.visibility,
+          isPrivate: data.isPrivate ?? data.visibility === 'PRIVATE',
         });
         
         if (data.players) {

@@ -25,6 +25,7 @@ interface PublicRoom {
   code: string;
   name: string | null;
   visibility: 'PUBLIC' | 'PRIVATE';
+  isPrivate?: boolean;
   maxPlayers: number;
   players: any[];
   selectedWordPack: {
@@ -115,7 +116,12 @@ export function PublicLobbyPage() {
           };
           setCurrentUser(joinedPlayer);
         }
-        setRoom({ code: roomCode, hostId: data.hostPlayerId || data.player?.id || 'unknown' });
+        setRoom({
+          code: roomCode,
+          hostId: data.hostPlayerId || data.player?.id || 'unknown',
+          visibility: data.visibility,
+          isPrivate: data.isPrivate ?? data.visibility === 'PRIVATE',
+        });
         toast.success(`Joined room ${roomCode}! 🎮`);
         navigate(`/lobby/${roomCode}`);
       }

@@ -20,6 +20,7 @@ interface SettingsPanelProps {
     isHost: boolean;
     onChange: (settings: Partial<GameSettings>) => void;
     roomCode: string;
+    isPrivate?: boolean;
 }
 
 function Toggle({
@@ -80,6 +81,7 @@ export function SettingsPanel({
     isHost,
     onChange,
     roomCode,
+    isPrivate = false,
 }: SettingsPanelProps) {
     const handleDeleteRoom = () => {
         // console.log("Emitting room:delete with", { roomCode, isHost });
@@ -174,6 +176,18 @@ export function SettingsPanel({
 
                 {/* Toggles */}
                 <div className="space-y-4 pt-2 border-t-2 border-stone-100 dark:border-stone-800">
+                    <Toggle
+                        id="privateRoom"
+                        checked={isPrivate}
+                        onChange={(v) => onChange({ isPrivate: v })}
+                        disabled={!isHost}
+                        label="Private Room"
+                        description={
+                            isPrivate
+                                ? "Hidden from Public Lobby; join by code or invite link."
+                                : "Visible in Public Lobby."
+                        }
+                    />
                     <Toggle
                         id="enableHints"
                         checked={settings.enableHints}

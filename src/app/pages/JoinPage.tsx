@@ -24,6 +24,7 @@ export function JoinPage() {
     const [nickname, setNickname] = useState(authUser?.name || "");
     const [roomCode, setRoomCode] = useState(searchParams.get("code") || "");
     const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0]);
+    const [isPrivate, setIsPrivate] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -87,7 +88,12 @@ export function JoinPage() {
                         });
                     }
 
-                    setRoom({ code, hostId: data.hostPlayerId || data.player?.id || "unknown" });
+                    setRoom({
+                        code,
+                        hostId: data.hostPlayerId || data.player?.id || "unknown",
+                        visibility: data.visibility,
+                        isPrivate: data.isPrivate ?? data.visibility === "PRIVATE",
+                    });
                     toast.success(`Joined room ${code}! 🎉`);
                     navigate(`/lobby/${code}`);
                     setIsLoading(false);
@@ -117,7 +123,8 @@ export function JoinPage() {
             name: `${nickname}'s Room`,
             nickname: nickname.trim(),
             maxRounds: 5,
-            visibility: "PUBLIC", // Default to public for now
+            visibility: isPrivate ? "PRIVATE" : "PUBLIC",
+            isPrivate,
             settings: {
                 enableAiClue: true,
                 clueTriggerSeconds: 10,
@@ -292,6 +299,42 @@ export function JoinPage() {
                                 ))}
                             </div>
                         </div>
+
+                        {mode === "create" && (
+                            <div className="space-y-2 rounded-xl border-2 border-stone-200 dark:border-stone-700 p-3 bg-stone-50 dark:bg-stone-800/50">
+                                <div className="flex rounded-lg border-2 border-stone-200 dark:border-stone-700 overflow-hidden p-1 gap-1 bg-white dark:bg-stone-900">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPrivate(false)}
+                                        className={cn(
+                                            "flex-1 py-2 rounded-md text-xs font-bold transition-colors",
+                                            !isPrivate
+                                                ? "bg-amber-400 text-stone-900 border-2 border-stone-800 dark:border-stone-600"
+                                                : "text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800",
+                                        )}
+                                    >
+                                        Public Room
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPrivate(true)}
+                                        className={cn(
+                                            "flex-1 py-2 rounded-md text-xs font-bold transition-colors",
+                                            isPrivate
+                                                ? "bg-amber-400 text-stone-900 border-2 border-stone-800 dark:border-stone-600"
+                                                : "text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800",
+                                        )}
+                                    >
+                                        Private Room
+                                    </button>
+                                </div>
+                                <p className="text-xs text-stone-500 dark:text-stone-400 leading-snug">
+                                    {isPrivate
+                                        ? "Private rooms only appear to players with the invite link or room code."
+                                        : "Public rooms appear in Public Lobby so other players can find them."}
+                                </p>
+                            </div>
+                        )}
 
                         {/* Preview */}
                         {nickname && (

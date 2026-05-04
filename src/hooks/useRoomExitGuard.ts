@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useBlocker, useNavigate } from 'react-router';
 import { socketService } from '../lib/socket';
-import { getApiBaseUrl } from '../services/api-client';
 import { useGameStore } from '../store/game-store';
 
 interface UseRoomExitGuardProps {
@@ -51,12 +50,6 @@ export function useRoomExitGuard({
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       sessionStorage.setItem('reloaded_from_room', 'true');
-
-      if (roomCode) {
-        const endpoint = isHost ? 'delete-on-exit' : 'leave-on-exit';
-        const url = `${getApiBaseUrl()}/api/rooms/${roomCode}/${endpoint}`;
-        navigator.sendBeacon(url);
-      }
 
       e.preventDefault();
       e.returnValue = ''; 
@@ -116,11 +109,7 @@ export function useRoomExitGuard({
   const confirmExit = useCallback(async () => {
     setIsProcessingExit(true);
     if (roomCode) {
-        if (isHost) {
-            socketService.emit('room:delete', { roomCode });
-        } else {
-            socketService.emit('room:leave', { roomCode });
-        }
+        socketService.emit('room:leave', { roomCode });
     }
     
     // Grace period for socket emission before proceeding with navigation
@@ -130,7 +119,7 @@ export function useRoomExitGuard({
       blocker.proceed();
     }
     setShowConfirmModal(false);
-  }, [blocker, isHost, roomCode]);
+  }, [blocker, roomCode]);
 
   const cancelExit = useCallback(() => {
     if (blocker.state === 'blocked') {
