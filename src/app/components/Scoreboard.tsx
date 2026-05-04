@@ -76,7 +76,9 @@ interface ScoreboardProps {
 }
 
 export function Scoreboard({ players, currentUserId, currentDrawerId }: ScoreboardProps) {
-  const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+  const sortedPlayers = players
+    .filter((player) => player.status !== 'disconnected')
+    .sort((a, b) => b.score - a.score);
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-stone-900">

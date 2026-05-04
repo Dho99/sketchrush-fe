@@ -11,7 +11,9 @@ interface GameEndModalProps {
 }
 
 export function GameEndModal({ players, onBackToLobby }: GameEndModalProps) {
-  const sorted = [...players].sort((a, b) => b.score - a.score);
+  const sorted = players
+    .filter((player) => player.status !== 'disconnected')
+    .sort((a, b) => b.score - a.score);
   const winner = sorted[0];
 
   useEffect(() => {

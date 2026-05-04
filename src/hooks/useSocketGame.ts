@@ -166,6 +166,9 @@ export function useSocketGame(roomCode: string | undefined) {
         if (useGameStore.getState().isLeavingGame) return;
         audioManager.playGameEnd();
         toast.info(data.message || 'Game ended.');
+        setIsStartingGame(false);
+        setShowRoundResult(false);
+        setRoundResult(null);
         if (data.leaderboard) {
             const existingById = new Map(useGameStore.getState().players.map((player) => [player.id, player]));
             const mapped = data.leaderboard.map((p: any) => mapSocketPlayer(p, existingById.get(p.id || p.playerId)));
@@ -195,6 +198,15 @@ export function useSocketGame(roomCode: string | undefined) {
             const player = useGameStore.getState().players.find(p => p.id === data.playerId);
             if (player) toast.info(`${player.name} disconnected.`);
         }
+    });
+
+    socket.on('player:list', (players: any[]) => {
+        if (useGameStore.getState().gameStatus === 'game-end') return;
+        const existingById = new Map(useGameStore.getState().players.map((player) => [player.id, player]));
+        const mapped = players
+            .map((p: any) => mapSocketPlayer(p, existingById.get(p.id || p.playerId)))
+            .filter((player: Player) => player.status !== 'disconnected');
+        setPlayers(uniquePlayersById(mapped));
     });
 
     socket.on('round:start', (data: any) => {
@@ -440,6 +452,7 @@ export function useSocketGame(roomCode: string | undefined) {
       socket.off('game:ended');
       socket.off('room:deleted');
       socket.off('player:status');
+      socket.off('player:list');
       socket.off('round:start');
       socket.off('round:nextDrawerAssigned');
       socket.off('round:wordOptions');
