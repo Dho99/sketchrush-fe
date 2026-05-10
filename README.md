@@ -56,11 +56,11 @@ frontend/
 - `src/hooks/useSocketGame.ts`: Menangani event game spesifik seperti mulai ronde, tebakan, dan hasil akhir.
 
 ## Realtime Flow
-1. **Connection**: Frontend membuka koneksi ke backend saat aplikasi dimuat atau saat bergabung ke room.
+1. **Connection**: Frontend membuka koneksi ke backend saat aplikasi dimuat atau saat bergabung ke room. Koneksi ini dikelola secara terdistribusi melalui **Redis Socket.IO Adapter**.
 2. **Drawing**: Saat pemain menggambar, koordinat dikirim secara *throttled* melalui event `draw:stroke`.
-3. **Receiving**: Pemain lain menerima stroke tersebut dan menggambarnya kembali di canvas masing-masing secara instan.
+3. **Receiving**: Pemain lain menerima stroke tersebut dan menggambarnya kembali di canvas masing-masing secara instan. Broadcast antar node server dilakukan secara efisien via Redis Pub/Sub.
 4. **Guessing**: Input teks dikirim melalui `chat:message`, backend memvalidasi, dan mengirim balik event `round:correctGuess` jika benar.
-5. **Replay**: Setelah ronde berakhir, data stroke yang disimpan di database diambil dan divisualisasikan kembali menggunakan `ReplayModal.tsx`.
+5. **Replay**: Setelah ronde berakhir, data stroke yang sebelumnya di-buffer di **Redis** dan kemudian dipersistensi ke database diambil untuk divisualisasikan kembali menggunakan `ReplayModal.tsx`.
 
 ## Socket.IO Events (Client-Side)
 | Event | Arah | Deskripsi |
